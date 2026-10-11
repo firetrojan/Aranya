@@ -228,6 +228,15 @@ def main():
                     "ci.yml line %d runs a gradlew command without "
                     "working-directory: android" % line_no)
 
+# 5e. A multi-line `script:` block in android-emulator-runner is executed one line at a
+    #     time by /usr/bin/sh -c, so a leading `cd` does not apply to later lines and
+    #     every command after it fails with exit 127. (Real Stage 02 CI failure.)
+        m = re.search(r"script:\s*\|\n((?:\s{10,}[^\n]*\n)+)", text)
+        if m and len([l for l in m.group(1).split("\n") if l.strip()]) > 1:
+            failures.append(
+                "ci.yml has a multi-line `script: |` block for android-emulator-runner; "
+                "each line runs as a separate sh -c, so use a single `cd android && ...` line")
+
     # 6. Build config sanity: minSdk/targetSdk present and coherent.
     checked += 1
     gradle = os.path.join(ROOT, "android", "app", "build.gradle.kts")

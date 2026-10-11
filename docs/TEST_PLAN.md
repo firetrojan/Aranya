@@ -117,20 +117,34 @@ gradle wrapper --gradle-version 8.7   # once, on a working machine
 
 ## 6. Performance and size budget
 
-Not yet baselined, because no APK was built. Proposed budgets:
+**Baseline measured in CI, run 38113764948, 2026-10-11:**
+
+| Artifact | Variant | Size | Budget | Status |
+| --- | --- | --- | --- | --- |
+| `app-debug.apk` | debug | 12,097,287 B (12 MB) | < 15 MB | **Met** |
+| `app-release.apk` | release | 1,835,074 B (1.8 MB) | < 8 MB | **Met, 77% headroom** |
+
+The release figure is the one that matters: R8 with `shrinkResources` removes the
+unused Compose tooling, unused Material icons and test-only references, which is why it
+is roughly seven times smaller than the debug build. Only the English locale ships, and
+the launcher icon is vector with no PNG densities, so there is no per-density asset cost.
+
+The release build is currently **debug-signed** so it can be produced without secrets.
+It must be re-signed before any real distribution. Size will not change materially from
+signing.
+
+Remaining budgets, not yet baselined because they need a device:
 
 | Metric | Budget | Rationale |
 | --- | --- | --- |
-| Debug APK | < 15 MB | Debug builds are never the user-facing size |
-| **Release APK** | **< 8 MB** | Must install cheaply over a 2G/3G connection |
 | Installed size | < 30 MB | Leaves room on an 8 GB device |
 | Cold start | < 800 ms | Asset load only; no network |
 | Steady-state RSS | < 150 MB | Budget device headroom |
 | APK per added language | < 400 KB | Keeps language packs a deliberate choice |
 | Network per refresh | < 150 KB | Must be viable on a metered connection |
 
-Stage 02 must measure and record actuals. If the release APK exceeds 8 MB, revisit
-dependency count before features.
+Stage 03 must re-measure after the first added locale, since that is the first change
+that materially moves these numbers.
 
 ## 7. Test data rules
 
