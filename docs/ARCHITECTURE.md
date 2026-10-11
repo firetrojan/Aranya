@@ -181,11 +181,23 @@ startup, so there is no flag to disable them.
 Any x86-64 or glibc-aarch64 Linux host, macOS, or Windows with the Android SDK works
 normally. Nothing about Aranya is unusual; this is purely a host-architecture limitation.
 
-On this device, the workable options are:
+`.github/workflows/ci.yml` implements the remedy and is the recommended first place to run
+the unverified Kotlin tests:
+
+| Job | What it runs |
+| --- | --- |
+| `host-tests` | `scripts/run_tests.sh`, plus a check that the registry snapshot is not stale |
+| `android-build` | `assembleDebug`, `testDebugUnitTest` (ColorContrastTest, SourcePolicyTest), `assembleRelease`, and reports real APK size |
+| `lint` | `lintRelease` |
+| `source-probe` | Re-probes every source on a schedule so registry status cannot silently become false |
+
+The `android-build` job reports actual APK size into the job summary, because Stage 01
+recorded no size figure. Running that job is the single most useful next action.
+
+On this device specifically, the options are:
 
 1. **A Linux VM or container on the device.** Requires an emulator, which is not available.
-2. **A remote/CI builder.** Recommended: GitHub Actions on `ubuntu-latest` builds and runs
-   the Gradle tests, which is where the unverified Kotlin tests should first be executed.
+2. **GitHub Actions**, as above. Recommended.
 3. **Run the Python pipeline tests only**, which is what `scripts/run_tests.sh` does now.
 
 ### Consequences for this stage
