@@ -95,6 +95,9 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    // Required for AppCompatDelegate.setApplicationLocales, which backs the in-app
+    // language override. MainActivity extends AppCompatActivity for this reason.
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

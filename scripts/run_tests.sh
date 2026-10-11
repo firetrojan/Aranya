@@ -34,7 +34,10 @@ run "schemas"              data-pipeline/tests/test_schemas.py
 run "palette contrast"     data-pipeline/tests/verify_palette_contrast.py
 run "source policy"        data-pipeline/tests/verify_source_policy.py
 run "android sources"      data-pipeline/tests/verify_android_sources.py
+run "kotlin integrity"     data-pipeline/tests/verify_kotlin_integrity.py
+run "icons in core"        data-pipeline/tests/verify_icons.py
 run "docs consistency"     data-pipeline/tests/verify_docs_consistency.py
+run "gradle versions"      data-pipeline/tests/verify_gradle_versions.py
 
 echo ""
 echo "=== registry snapshot is current ==="

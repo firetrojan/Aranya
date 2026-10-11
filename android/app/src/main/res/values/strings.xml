@@ -13,8 +13,35 @@
     <string name="app_name">Aranya</string>
     <string name="app_tagline">Agricultural information you can check</string>
 
+    <!-- ============================== nav ================================ -->
+    <string name="nav_home">Home</string>
+
+    <!-- ============================== home ================================ -->
+    <string name="home_sections">Sections</string>
+    <string name="home_current_weather">Current weather</string>
+    <string name="home_weather_subtitle">Forecast for the next five days</string>
+    <string name="home_sources_subtitle">Every data source, with its licence and verification date</string>
+    <string name="home_no_weather_yet">No location chosen yet. Pick one to load a forecast.</string>
+    <string name="home_choose_location">Choose a location</string>
+    <string name="home_open_detail">Reload the forecast now</string>
+    <string name="home_full_forecast">Open the full forecast</string>
+    <string name="home_palette_label">Aranya colours</string>
+
+    <!-- ============================ settings ============================= -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">Use device language</string>
+    <string name="settings_language_note">Aranya follows your device language for text, numbers, dates and units.</string>
+    <string name="settings_language_coming">More Indian languages are being added. English is complete.</string>
+    <string name="settings_about">About the data</string>
+    <string name="settings_units">Units</string>
+    <string name="settings_units_note">Temperature is shown in Celsius and rainfall in millimetres, which follow the source data directly. Nothing is converted.</string>
+
+    <!-- ========================== shared values ========================== -->
+    <!-- Shown when a value is genuinely unknown. Never a substitute for a number. -->
+    <string name="value_unknown">Not reported</string>
+
     <!-- ============================== shell ================================ -->
-    <string name="shell_stage_label">Stage 01 &#8212; foundation only</string>
     <string name="shell_stage_body">Aranya\'s foundations, source registry and design system are in place. Agricultural features are not built yet. Nothing on this screen is live data.</string>
     <string name="shell_theme_label">Appearance</string>
     <string name="shell_theme_system">Follow system</string>
