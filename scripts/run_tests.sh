@@ -55,6 +55,7 @@ run "palette contrast"     data-pipeline/tests/verify_palette_contrast.py
 run "chart series"         data-pipeline/tests/verify_chart_series.py
 run "source policy"        data-pipeline/tests/verify_source_policy.py
 run "android sources"      data-pipeline/tests/verify_android_sources.py
+run "workflow yaml"       data-pipeline/tests/verify_workflow_yaml.py
 run "kotlin integrity"     data-pipeline/tests/verify_kotlin_integrity.py
 run "icons in core"        data-pipeline/tests/verify_icons.py
 run "docs consistency"     data-pipeline/tests/verify_docs_consistency.py
