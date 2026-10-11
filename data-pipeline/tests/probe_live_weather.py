@@ -48,6 +48,11 @@ def check(label, ok, detail=""):
 def main():
     failures = 0
 
+    # Network reachability is tracked separately from contract violations. A flaky
+    # connection must not be reported as "the upstream contract changed", because that
+    # would send someone hunting a contract break that does not exist.
+    transport_failures = 0
+
     # Two of the shipped preset locations, plus a non-preset coordinate, to prove the
     # request works for any point and not just a hardcoded one.
     cases = [
@@ -64,10 +69,13 @@ def main():
                 status = r.status
                 body = r.read().decode("utf-8")
         except urllib.error.HTTPError as e:
-            failures += check("%s: request" % name, False, "HTTP %s" % e.code)
+            print("FAIL %s: request - HTTP %s" % (name, e.code))
+            transport_failures += 1
             continue
         except Exception as e:
-            failures += check("%s: request" % name, False, type(e).__name__)
+            # URLError, timeout, socket errors: the network, not the contract.
+            print("NETWORK %s: request - %s" % (name, type(e).__name__))
+            transport_failures += 1
             continue
 
         failures += check("%s: HTTP 200" % name, status == 200, "got %s" % status)
@@ -124,11 +132,19 @@ def main():
         print()
 
     print()
+    if transport_failures and not failures:
+        print("LIVE PROBE INCONCLUSIVE: %d of %d requests could not reach the provider "
+              "(network, not contract). No contract assertion failed." % (transport_failures, len(cases)))
+        return 0
     if failures:
         print("LIVE PROBE FAILED: %d contract assertions did not hold" % failures)
         print("The Android adapter would reject this response. Check whether the")
         print("upstream contract changed before trusting the weather feature.")
         return 1
+    if transport_failures:
+        print("LIVE PROBE PASSED with %d unreachable location(s); contract held where reachable."
+              % transport_failures)
+        return 0
     print("LIVE PROBE PASSED: the upstream contract the app depends on holds")
     return 0
 

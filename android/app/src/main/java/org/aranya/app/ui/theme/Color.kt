@@ -83,11 +83,6 @@ internal val PositiveDark = Color(0xFF8FBF97)
 
 // Chart series. Ordered so adjacent series stay separable in greyscale and for
 // deuteranopia/protanopia; never rely on hue alone.
-internal val ChartSeries1Light = Color(0xFF2A6B3C)
-internal val ChartSeries2Light = Color(0xFFA8541B)
-internal val ChartSeries3Light = Color(0xFF15527D)
-internal val ChartSeries4Light = Color(0xFF6B573F)
-
 internal val ChartSeries1Light = Color(0xFF374236)
 internal val ChartSeries2Light = Color(0xFFFAA554)
 internal val ChartSeries3Light = Color(0xFF4290C7)

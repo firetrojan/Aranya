@@ -251,8 +251,43 @@ def check_data_class_constructor_calls():
     return problems
 
 
+def check_duplicate_declarations():
+    """
+    The same kind + name declared twice at top level is a conflicting-declaration
+    compile error.
+
+    This happened in Stage 02 when a scripted patch inserted a replacement block without
+    removing the originals. A patch script that adds rather than replaces is easy to write
+    and impossible to spot by eye in a long token file, so it is asserted here.
+
+    Keyed on (kind, name) because Kotlin permits an object and a function to share a
+    name: `object AranyaTheme` plus `fun AranyaTheme(...)` is a deliberate pattern used
+    to expose composables through a conventional accessor.
+    """
+    problems = []
+    for path in files_under(""):
+        text = open(path, encoding="utf-8").read()
+        # Top-level declarations only: no leading indentation.
+        decls = re.findall(
+            r"^(?:internal\s+|private\s+|public\s+)?"
+            r"(val|var|fun|class|object|enum\s+class|interface|typealias)\s+(\w+)",
+            text, re.M)
+        # `enum class X` and `class X` are different kinds; normalise to the declared name.
+        seen = {}
+        for kind, name in decls:
+            key = (kind.replace(" ", ""), name)
+            seen[key] = seen.get(key, 0) + 1
+        for (kind, name), count in sorted(seen.items()):
+            if count > 1:
+                problems.append(
+                    "%s: '%s %s' is declared %d times at top level (conflicting declarations)"
+                    % (os.path.relpath(path, ROOT), kind, name, count))
+    return problems
+
+
 CHECKS = [
     ("no duplicate imports", check_duplicate_imports),
+    ("no duplicate declarations", check_duplicate_declarations),
     ("own-package imports resolve", lambda: check_own_imports(declared_packages())),
     ("callback arities match", check_callback_arities),
     ("no stale string references", check_stale_symbols),
