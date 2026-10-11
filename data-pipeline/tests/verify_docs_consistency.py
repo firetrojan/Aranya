@@ -50,18 +50,30 @@ def main():
     if "## 1. Verified (6)" not in datasources:
         failures.append("DATA_SOURCES.md does not state the verified count that the registry has")
 
-    # 2. README must NOT claim the Android build succeeded.
-    checks += 1
-    for phrase in ("build verified", "build passes", "APK built successfully"):
-        if phrase.lower() in readme.lower():
-            failures.append("README appears to claim a verified Android build: %r" % phrase)
+    # 2. The README must not overclaim. As of Stage 02 the Android build IS verified in CI,
+    #    so the rule is inverted from Stage 01: the README must now state the measured
+    #    APK sizes and must not claim local Android builds work, because they do not.
+    checks += 3
+    low = readme.lower()
+    for phrase in ("build verified", "build passes", "apk built successfully"):
+        if phrase in low:
+            failures.append("README appears to overclaim the Android build: %r" % phrase)
+    if "app-release.apk" not in low or "1.8" not in low:
+        failures.append(
+            "README must state the measured release APK size; it is a verified fact from CI")
+    if "do not work on an aarch64 android host" not in low and \
+       "local android builds do not work" not in low:
+        failures.append(
+            "README must say that local Android builds do not work on this host type, "
+            "since that remains true even though CI builds successfully")
 
-    # 3. README and ARCHITECTURE must both disclose the Gradle blocker.
+    # 3. The Gradle blocker must stay documented. CI works around it, but the local host
+    #    limitation is still real, so the evidence must not be quietly deleted.
     checks += 2
-    if "has not been verified" not in readme.lower() and "not been verified" not in readme.lower():
-        failures.append("README does not disclose the unverified Android build")
     if "libnative-platform.so" not in arch:
         failures.append("ARCHITECTURE.md does not record the Gradle blocker evidence")
+    if "glibc" not in arch.lower():
+        failures.append("ARCHITECTURE.md does not explain the glibc root cause")
 
     # 4. Every host suite named in the test plan must actually exist, and each must be
     #    listed with a status rather than silently omitted.

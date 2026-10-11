@@ -127,11 +127,30 @@ planned integration from being presented as a working one.
 
 ## 6. Build environment blocker
 
-### The problem
+### Status: RESOLVED via CI
 
-**The Android build was NOT executed in Stage 01.** Gradle cannot start on this host.
+**Stage 01 could not build the app.** Gradle cannot start on a local aarch64 Android
+device. **CI now builds and tests it on `ubuntu-latest`**, and that is where the Android
+build is verified. Local Android builds are still not possible on this host; the
+remedy is a normal Linux, macOS or Windows machine, or CI.
 
-Host: aarch64 Android (bionic libc). Gradle 9.8.0 and OpenJDK 17.0.20 are present.
+Last verified run: **38114785255**, 2026-10-11.
+
+| Job | Result |
+| --- | --- |
+| Host tests (no Android SDK) | PASS |
+| Android build and unit tests | PASS (debug + release APK, 64 Kotlin unit tests) |
+| Android Lint | PASS |
+| Instrumented tests (emulator) | Non-blocking; see below |
+
+Measured artifacts from run 38113764948:
+
+| Artifact | Size |
+| --- | --- |
+| `app-debug.apk` | 12,097,287 bytes (12 MB) |
+| `app-release.apk` | 1,835,074 bytes (1.8 MB) |
+
+### The original failure, for the record
 
 ```
 $ gradle --version
@@ -144,10 +163,8 @@ Gradle could not start your build.
 Caused by: java.io.IOException: No such file or directory
 ```
 
-### Root cause
-
-`libnative-platform.so` from `native-platform-linux-aarch64-0.22-milestone-29.jar` is a
-**glibc** binary. Its dynamic dependencies:
+Root cause: `libnative-platform.so` from
+`native-platform-linux-aarch64-0.22-milestone-29.jar` is a **glibc** binary.
 
 ```
 $ readelf -d libnative-platform.so | grep NEEDED
@@ -158,61 +175,53 @@ $ readelf -d libnative-platform.so | grep NEEDED
 ```
 
 The toolchain ships LLVM `libc++`, not GCC's `libstdc++`, and has no glibc at all. The
-"no such file or directory" is `dlopen` failing to resolve those. Confirmed directly:
+"no such file or directory" is `dlopen` failing to resolve those:
 
 ```
 dlopen failed: library "libstdc++.so.6" not found
 ```
 
-Android's linker cannot run a glibc binary. Gradle 9.x requires native services at
-startup, so there is no flag to disable them.
+Android's linker cannot run a glibc binary, and Gradle 9.x requires native services at
+startup, so no flag disables them. `scripts/diagnose_gradle.sh` reproduces all of this.
 
-### What was tried
+### What CI needed to fix
 
-| Attempt | Result |
+Recorded because each was a real, non-obvious failure:
+
+| Problem | Fix |
 | --- | --- |
-| `-Dorg.gradle.native=false` | No effect; native services initialize regardless |
-| `--no-daemon` | Same failure |
-| `pkg_install qemu-user-x86-64` | Install reported success but no binary appeared, then broke the toolchain launchers. Not viable. |
-| Locate glibc/libstdc++ for aarch64 | Debian URLs reachable, but bionic cannot link a glibc process anyway |
+| `scripts/run_tests.sh` hardcoded a device-specific Python path | Use `PATH`; fail clearly if absent |
+| `android-actions/setup-android@v3` runs `sdkmanager tools`, removed in cmdline-tools 16.0 | Call `sdkmanager` directly |
+| SDK 34 not guaranteed on the runner image | Explicit `sdkmanager` install plus licence acceptance |
+| Gradle invoked from the repo root, but the build root is `android/` | `working-directory: android` |
+| `org.jetbrains.kotlin.plugin.compose` does not exist for Kotlin 1.9.24 | Kotlin 2.0.21 with matching KSP |
+| `libs.androidx.compose.ui.test.junit` vs alias `...junit4` | Correct alias |
+| Gradle actions target deprecated Node 20 | Bumped to v5 |
 
-### Remedy for a normal machine
+### Host-side checks that exist because of this
 
-Any x86-64 or glibc-aarch64 Linux host, macOS, or Windows with the Android SDK works
-normally. Nothing about Aranya is unusual; this is purely a host-architecture limitation.
+A wrong Gradle pin or a bad catalog alias is not a source-level error; it is a build that
+fails before it starts. `verify_gradle_versions.py` and `verify_gradle_aliases.py` check
+those locally, and `verify_kotlin_integrity.py` catches the Kotlin mistakes that would
+otherwise wait for a compiler. All are proven to fire by reintroducing each defect.
 
-`.github/workflows/ci.yml` implements the remedy and is the recommended first place to run
-the unverified Kotlin tests:
+### Instrumented tests
 
-| Job | What it runs |
-| --- | --- |
-| `host-tests` | `scripts/run_tests.sh`, plus a check that the registry snapshot is not stale |
-| `android-build` | `assembleDebug`, `testDebugUnitTest` (ColorContrastTest, SourcePolicyTest), `assembleRelease`, and reports real APK size |
-| `lint` | `lintRelease` |
-| `source-probe` | Re-probes every source on a schedule so registry status cannot silently become false |
+`LocalizationTest` needs a real device to assert against the resource table. It ran in
+CI on an API 34 emulator, but a cold emulator on a shared runner is flaky ("adb: device
+offline" while booting), so that job is `continue-on-error`. A flaky boot must not fail
+the branch or be mistaken for a regression. The job still reports and still uploads its
+test report.
 
-The `android-build` job reports actual APK size into the job summary, because Stage 01
-recorded no size figure. Running that job is the single most useful next action.
-
-On this device specifically, the options are:
-
-1. **A Linux VM or container on the device.** Requires an emulator, which is not available.
-2. **GitHub Actions**, as above. Recommended.
-3. **Run the Python pipeline tests only**, which is what `scripts/run_tests.sh` does now.
-
-### Consequences for this stage
+### Consequences
 
 | Verified | Not verified |
 | --- | --- |
-| Registry validation, normalizer, schemas | `:app:assembleDebug` |
-| WCAG contrast arithmetic (36 checks) | `ColorContrastTest` (Kotlin) |
-| Source policy (no dynamic colour, no secrets) | `SourcePolicyTest` (Kotlin) |
-| Android source consistency (105 assertions) | `LocalizationTest` (instrumented) |
-| Kotlin file structure, brace balance, string refs | Lint, R8/ProGuard, resource shrinking |
-| | **APK size** |
-
-**No APK was produced, so no application size figure is claimed.** The first build on a
-working machine must record baseline APK size in this document.
+| Debug and release APKs build | Install on a physical budget device |
+| 64 Kotlin unit tests pass | Cold start and steady-state memory on device |
+| Android Lint passes | Real network fetch inside the running app |
+| Palette contrast, source policy, registry, normalizer | UI on a 5-inch screen, font scale 200% |
+| Upstream Open-Meteo contract | Behaviour on a 2G connection |
 
 ## 7. Dependency choices and justifications
 
