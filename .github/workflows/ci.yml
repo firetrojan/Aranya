@@ -63,18 +63,23 @@ jobs:
             "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-home-cache-key: aranya-gradle
 
       - name: Generate the Gradle wrapper
+        working-directory: android
         run: |
           gradle wrapper --gradle-version 8.7
           chmod +x gradlew
 
       - name: Build debug APK
+        working-directory: android
         run: ./gradlew :app:assembleDebug --stacktrace
 
       # ColorContrastTest and SourcePolicyTest run here. They were written but never
       # executed in Stage 01; this job is where they first run.
       - name: Run Kotlin unit tests
+        working-directory: android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
       - name: Upload unit test report
@@ -88,6 +93,7 @@ jobs:
       # The release build is what the size budget applies to. Debug is not the number
       # a farmer downloads.
       - name: Build release APK
+        working-directory: android
         run: ./gradlew :app:assembleRelease --stacktrace
 
       # Stage 01 recorded no size figure because no APK was built. This prints the real
@@ -132,13 +138,17 @@ jobs:
             "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-home-cache-key: aranya-gradle
 
       - name: Generate the Gradle wrapper
+        working-directory: android
         run: |
           gradle wrapper --gradle-version 8.7
           chmod +x gradlew
 
       - name: Run Lint
+        working-directory: android
         run: ./gradlew :app:lintRelease --stacktrace
 
       - name: Upload Lint report
