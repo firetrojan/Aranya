@@ -184,6 +184,73 @@ def check_unused_imports():
     return problems
 
 
+def check_package_path():
+    """
+    A file's directory must match its `package` declaration.
+
+    Stage 02 shipped SourceRegistry.kt under org/anya/ while declaring `package
+    org.aranya...`. Kotlin does not care, but every other tool, and every human navigating
+    the tree, does. This is cheap to assert and expensive to miss.
+    """
+    problems = []
+    for path in files_under(""):
+        text = open(path, encoding="utf-8").read()
+        m = re.search(r"^package\s+([\w.]+)", text, re.M)
+        if not m:
+            continue
+        actual = os.path.dirname(path)
+        # Find the source root for this file: the nearest ancestor named "java".
+        # Everything after it must mirror the package declaration exactly.
+        parts = actual.split(os.sep)
+        if "java" not in parts:
+            continue
+        root = len(parts) - 1 - parts[::-1].index("java")
+        expected = os.sep.join(parts[:root + 1] + m.group(1).split("."))
+        if os.path.normpath(actual) != os.path.normpath(expected):
+            problems.append(
+                "%s declares package %s but sits in %s"
+                % (os.path.relpath(path, ROOT), m.group(1),
+                   os.path.relpath(actual, ROOT)))
+    return problems
+
+
+def check_data_class_constructor_calls():
+    """
+    Data classes whose fields mix Int and Double must be constructed with named
+    arguments.
+
+    A positional call against such a constructor is a type error at best and a silently
+    misassigned value at worst, which is exactly how a forecast reading gets attached to
+    the wrong day.
+    """
+    problems = []
+    for path in files_under(""):
+        text = open(path, encoding="utf-8").read()
+        # Data classes declaring both Int and Double nullable fields.
+        classes = {}
+        for m in re.finditer(r"data class (\w+)\(([^)]*)\)", text, re.M):
+            name, body = m.group(1), m.group(2)
+            has_int = re.search(r":\s*Int\??\s*[,\)]", body) is not None
+            has_double = re.search(r":\s*Double\??\s*[,\)]", body) is not None
+            if has_int and has_double:
+                classes[name] = True
+        if not classes:
+            continue
+        for name in classes:
+            for m in re.finditer(r"\b%s\(\s*[^)\n]*\)" % re.escape(name), text):
+                call = m.group(0)
+                # A named argument makes the intent explicit and is always acceptable.
+                if re.search(r"\w+\s*=", call):
+                    continue
+                # Skip declarations and empty calls.
+                if "data class %s(" % name in call:
+                    continue
+                problems.append(
+                    "%s: %s(...) uses positional arguments but the class mixes Int and "
+                    "Double; use named arguments" % (os.path.relpath(path, ROOT), name))
+    return problems
+
+
 CHECKS = [
     ("no duplicate imports", check_duplicate_imports),
     ("own-package imports resolve", lambda: check_own_imports(declared_packages())),
@@ -191,6 +258,8 @@ CHECKS = [
     ("no stale string references", check_stale_symbols),
     ("rememberSaveable is safe", check_destination_saveable),
     ("no unused imports", check_unused_imports),
+    ("package matches directory", check_package_path),
+    ("mixed-type constructors are named", check_data_class_constructor_calls),
 ]
 
 

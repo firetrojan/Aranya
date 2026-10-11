@@ -51,7 +51,16 @@ class WeatherViewModelTest {
     private fun snapshotAt(retrievedAt: String, temp: Double = 26.1) = WeatherSnapshot(
         location = pune,
         current = WeatherConditions(temperatureC = temp, relativeHumidityPct = 56),
-        daily = listOf(DailyForecast("2026-10-11", 1, 33.4, 24.1, 0.0, 0)),
+        daily = listOf(
+            DailyForecast(
+                dateIso = "2026-10-11",
+                weatherCode = 1,
+                tempMaxC = 33.4,
+                tempMinC = 24.1,
+                precipitationSumMm = 0.0,
+                precipitationProbabilityMaxPct = 0,
+            ),
+        ),
         attribution = attribution,
         retrievedAt = retrievedAt,
     )

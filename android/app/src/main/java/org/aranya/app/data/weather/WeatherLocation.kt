@@ -3,10 +3,11 @@ package org.aranya.app.data.weather
 /**
  * A selectable location, entered by the user.
  *
- * No GPS by design. Agricultural weather advice needs a district-scale location, not a
- * precise fix, and requesting location permission for this would be a privacy cost out of
- * proportion to the benefit. See docs/PRIVACY.md section 3.
+ * Serializable because it travels inside [WeatherSnapshot], which is what gets persisted.
+ * No location permission is involved: the coordinates come from the user choosing a preset
+ * or from their own typed selection, never from GPS. See docs/PRIVACY.md section 3.
  */
+@kotlinx.serialization.Serializable
 data class WeatherLocation(
     val name: String,
     val latitude: Double,

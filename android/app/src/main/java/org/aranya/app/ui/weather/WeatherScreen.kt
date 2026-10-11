@@ -613,9 +613,25 @@ private fun WeatherReadyPreview() {
                         observedAt = "2026-10-11T08:15",
                     ),
                     daily = listOf(
-                        DailyForecast("2026-10-11", 1, 33.4, 24.1, 0.0, 0),
-                        DailyForecast("2026-10-12", 61, 30.1, 23.4, 12.0, 70),
+                    // Named arguments: the field order mixes Int and Double, so a
+                    // positional call would silently compile against the wrong types.
+                    DailyForecast(
+                        dateIso = "2026-10-11",
+                        weatherCode = 1,
+                        tempMaxC = 33.4,
+                        tempMinC = 24.1,
+                        precipitationSumMm = 0.0,
+                        precipitationProbabilityMaxPct = 0,
                     ),
+                    DailyForecast(
+                        dateIso = "2026-10-12",
+                        weatherCode = 61,
+                        tempMaxC = 30.1,
+                        tempMinC = 23.4,
+                        precipitationSumMm = 12.0,
+                        precipitationProbabilityMaxPct = 70,
+                    ),
+                ),
                     attribution = WeatherAttribution(
                         sourceId = "open_meteo_forecast",
                         providerName = "Open-Meteo",

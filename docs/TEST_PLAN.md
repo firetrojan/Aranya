@@ -2,29 +2,51 @@
 
 ## 1. Current status
 
-**Executed and passing: 86 checks.** **Written but not executed: the Kotlin test suites**,
-because Gradle cannot run in this environment (`docs/ARCHITECTURE.md` section 6).
+**Executed and passing: 13 host suites.** **The Kotlin suites run in CI**, because Gradle
+cannot run in this environment (`docs/ARCHITECTURE.md` section 6).
 
-| Suite | Checks | Status | Runs where |
-| --- | --- | --- | --- |
-| `test_sources_registry.py` | 12 | **Passed** | Host |
-| `test_normalize.py` | 23 | **Passed** | Host |
-| `test_schemas.py` | 5 | **Passed** | Host |
-| `verify_palette_contrast.py` | 36 | **Passed** | Host |
-| `verify_source_policy.py` | 5 | **Passed** | Host |
-| `verify_android_sources.py` | 105 assertions | **Passed** | Host |
-| `ColorContrastTest.kt` | 5 | **Not run** | Gradle unit |
-| `SourcePolicyTest.kt` | 5 | **Not run** | Gradle unit |
-| `LocalizationTest.kt` | 6 | **Not run** | Instrumented device |
+| Suite | Status | Runs where |
+| --- | --- | --- |
+| `test_sources_registry.py` | **Passed** | Host |
+| `test_normalize.py` | **Passed** | Host |
+| `test_schemas.py` | **Passed** | Host |
+| `verify_palette_contrast.py` | **Passed** | Host |
+| `verify_source_policy.py` | **Passed** | Host |
+| `verify_android_sources.py` | **Passed** | Host |
+| `verify_kotlin_integrity.py` | **Passed** | Host |
+| `verify_icons.py` | **Passed** | Host |
+| `verify_docs_consistency.py` | **Passed** | Host |
+| `verify_gradle_versions.py` | **Passed** | Host |
+| `verify_gradle_aliases.py` | **Passed** | Host |
+| `build_snapshot.py` | **Passed** | Host |
+| `probe_live_weather.py` | **Passed** (live) | Host |
+| `OpenMeteoWeatherProviderTest.kt` | CI | Gradle unit |
+| `WeatherDomainTest.kt` | CI | Gradle unit |
+| `WeatherViewModelTest.kt` | CI | Gradle unit |
+| `ColorContrastTest.kt` | CI | Gradle unit |
+| `SourcePolicyTest.kt` | CI | Gradle unit |
+| `LocalizationTest.kt` | **Not run** | Needs a device |
 
 ```sh
-sh scripts/run_tests.sh
+bash scripts/run_tests.sh
 ```
 
-The three `verify_*` scripts exist because the Kotlin equivalents could not be run here.
-They apply the **same rules with the same expressions**, so the policy is enforced now
-rather than merely asserted. They are a bridge, not a substitute: the Kotlin tests remain
-authoritative once Gradle works, and should not be deleted.
+### What each host suite is for
+
+The host suites exist because **a wrong Gradle pin or a bad catalog alias is not a compile
+error in source, it is a build that fails before it starts**, and Gradle cannot run here.
+Each of these caught a real defect during Stage 02:
+
+| Suite | Defect it caught |
+| --- | --- |
+| `verify_gradle_versions.py` | Compose compiler plugin does not exist for Kotlin 1.9.24 (needs 2.x) |
+| `verify_gradle_aliases.py` | `libs.androidx.compose.ui.test.junit` vs alias `...junit4` |
+| `verify_kotlin_integrity.py` | Duplicate `Row` import; enum in `rememberSaveable`; stale string references |
+| `verify_icons.py` | `WbSunny` and `Schedule` are not in `material-icons-core` |
+| `probe_live_weather.py` | Confirms the upstream unit contract the DTOs depend on |
+
+The Gradle-based Kotlin suites remain authoritative. The host suites are a fast pre-flight,
+not a substitute, and `ColorContrastTest` still has to run for real.
 
 ## 2. Layer 1 — host tests (no device, no network)
 

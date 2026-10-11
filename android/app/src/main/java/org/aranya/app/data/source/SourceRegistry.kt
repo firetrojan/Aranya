@@ -13,8 +13,12 @@ import org.aranya.app.R
  *
  * Note on honesty: this list is the registry's own content. If a source is not verified
  * here, the app says so. It never invents a status.
+ *
+ * The constructor is `internal` rather than private so Compose previews can build a small
+ * registry without the Android asset loader, which a preview cannot access. Production code
+ * should still obtain one via [load].
  */
-class SourceRegistry private constructor(
+class SourceRegistry internal constructor(
     val sources: List<SourceRecord>,
 ) {
     val usableCount: Int get() = sources.count { it.status.isUsable }

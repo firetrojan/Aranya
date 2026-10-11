@@ -40,6 +40,23 @@ run "docs consistency"     data-pipeline/tests/verify_docs_consistency.py
 run "gradle versions"      data-pipeline/tests/verify_gradle_versions.py
 run "gradle aliases"      data-pipeline/tests/verify_gradle_aliases.py
 
+# Live contract probe. Reaches the real Open-Meteo endpoint with the exact parameter
+# string the Android adapter builds, and asserts the units and field names the DTOs
+# depend on. This is what catches an upstream contract change; the Kotlin tests use
+# fixtures and cannot.
+echo ""
+echo "=== live weather contract ==="
+PROBE_LOG="${TMPDIR:-/tmp}/aranya_live_probe.log"
+if python3 data-pipeline/tests/probe_live_weather.py > "$PROBE_LOG" 2>&1; then
+  echo "--- OK: live weather contract"
+  tail -1 "$PROBE_LOG"
+else
+  echo "--- FAILED: live weather contract"
+  tail -20 "$PROBE_LOG"
+  FAILED=1
+fi
+rm -f "$PROBE_LOG"
+
 echo ""
 echo "=== registry snapshot is current ==="
 if python3 data-pipeline/sources/build_snapshot.py; then

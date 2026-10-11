@@ -23,6 +23,7 @@ import org.aranya.app.data.source.SourceRegistry
 import org.aranya.app.data.settings.LANGUAGE_SYSTEM
 import org.aranya.app.data.settings.SUPPORTED_LANGUAGES
 import org.aranya.app.data.settings.toLanguageName
+import org.aranya.app.ui.components.Note
 import org.aranya.app.ui.components.Rule
 import org.aranya.app.ui.components.ScreenTitle
 import org.aranya.app.ui.components.SectionLabel

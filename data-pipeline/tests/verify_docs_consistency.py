@@ -32,6 +32,7 @@ def main():
     arch = read("docs/ARCHITECTURE.md")
     testplan = read("docs/TEST_PLAN.md")
     datasources = read("docs/DATA_SOURCES.md")
+    runtests = read("scripts/run_tests.sh")
 
     # 1. Registry status counts in the snapshot must match the docs.
     snap_path = os.path.join(ROOT, "android", "app", "src", "main", "assets", "sources_snapshot.json")
@@ -62,24 +63,34 @@ def main():
     if "libnative-platform.so" not in arch:
         failures.append("ARCHITECTURE.md does not record the Gradle blocker evidence")
 
-    # 4. Test plan totals must match the real suites.
-    suites = {
-        "test_sources_registry.py": 12,
-        "test_normalize.py": 23,
-        "test_schemas.py": 5,
-        "verify_palette_contrast.py": 36,
-        "verify_source_policy.py": 5,
-    }
-    total = sum(suites.values())
-    for name, n in suites.items():
+    # 4. Every host suite named in the test plan must actually exist, and each must be
+    #    listed with a status rather than silently omitted.
+    host_suites = [
+        "test_sources_registry.py", "test_normalize.py", "test_schemas.py",
+        "verify_palette_contrast.py", "verify_source_policy.py",
+        "verify_android_sources.py", "verify_kotlin_integrity.py",
+        "verify_icons.py", "verify_docs_consistency.py",
+        "verify_gradle_versions.py", "verify_gradle_aliases.py",
+        "probe_live_weather.py",
+    ]
+    for suite in host_suites:
         checks += 1
-        if "| `%s` | %d |" % (name, n) not in testplan:
-            failures.append("TEST_PLAN.md count for %s does not match %d" % (name, n))
-    checks += 1
-    if ("86 checks" not in testplan) and ("%d checks" % total not in testplan):
-        failures.append("TEST_PLAN.md total (%d expected) not stated" % total)
+        path = os.path.join(ROOT, "data-pipeline", "tests", suite)
+        if not os.path.exists(path):
+            failures.append("suite %s is documented but does not exist" % suite)
+        if suite not in testplan:
+            failures.append("TEST_PLAN.md does not mention %s" % suite)
+        if suite not in runtests:
+            failures.append("scripts/run_tests.sh does not run %s" % suite)
 
-    # 5. Every source marked verified in the snapshot must have a verified_on date.
+    # 5. The docs must not claim a Kotlin suite passed when it was never executed.
+    for suite in ["ColorContrastTest.kt", "SourcePolicyTest.kt", "LocalizationTest.kt"]:
+        checks += 1
+        row = [l for l in testplan.split("\n") if suite in l]
+        if row and "**Passed**" in row[0]:
+            failures.append("TEST_PLAN.md claims %s passed; it has not been executed" % suite)
+
+    # 6. Every source marked verified in the snapshot must have a verified_on date.
     checks += 1
     for r in snap:
         if r["status"] == "verified" and not r.get("verified_on"):

@@ -62,15 +62,18 @@ class OpenMeteoWeatherProvider(
                 parameter("timezone", "auto")
             }
 
+            // Status is checked against the integer range: `isSuccess()` is not available on
+            // Ktor's HttpStatusCode in every 2.x release, and an explicit range is clearer
+            // anyway because the two interesting cases (429 and any other error) are named.
+            val statusCode = response.status.value
             when {
-                response.status == HttpStatusCode.TooManyRequests ||
-                    response.status.value == 429 ->
+                statusCode == 429 ->
                     return WeatherResult.Failure(WeatherError.RATE_LIMITED, detail = "HTTP 429")
 
-                !response.status.isSuccess() ->
+                statusCode !in 200..299 ->
                     return WeatherResult.Failure(
                         WeatherError.HTTP_SERVER,
-                        detail = "HTTP ${response.status.value}",
+                        detail = "HTTP $statusCode",
                     )
             }
 

@@ -101,8 +101,8 @@ fun AranyaShell(
                 Destination.HOME -> HomeScreen(
                     registry = registry,
                     weatherState = weatherState,
-                    onOpenWeather = { destinationIndex = Destination.WEATHER },
-                    onOpenSources = { destinationIndex = Destination.SOURCES },
+                    onOpenWeather = { destinationIndex = Destination.WEATHER.ordinal },
+                    onOpenSources = { destinationIndex = Destination.SOURCES.ordinal },
                     onRefreshWeather = onRefreshWeather,
                     modifier = Modifier.fillMaxSize(),
                 )
