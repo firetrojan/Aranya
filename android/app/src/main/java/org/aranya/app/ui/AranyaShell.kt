@@ -1,12 +1,8 @@
 package org.aranya.app.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -32,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import org.aranya.app.R
 import org.aranya.app.data.source.SourceRegistry
 import org.aranya.app.data.weather.WeatherLocation
-import org.aranya.app.ui.components.ScreenTitle
 import org.aranya.app.ui.home.HomeScreen
 import org.aranya.app.ui.settings.SettingsScreen
 import org.aranya.app.ui.source.SourceStatusScreen

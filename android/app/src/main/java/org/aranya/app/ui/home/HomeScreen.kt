@@ -23,7 +23,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import org.aranya.app.R
 import org.aranya.app.data.source.SourceRegistry
-import org.aranya.app.data.weather.WeatherLocation
 import org.aranya.app.ui.components.ActionRow
 import org.aranya.app.ui.components.Note
 import org.aranya.app.ui.components.Rule

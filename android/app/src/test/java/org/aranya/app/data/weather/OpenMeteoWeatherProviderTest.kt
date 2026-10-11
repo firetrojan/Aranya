@@ -3,7 +3,6 @@ package org.aranya.app.data.weather
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
-import io.ktor.client.engine.mock.respondError
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode

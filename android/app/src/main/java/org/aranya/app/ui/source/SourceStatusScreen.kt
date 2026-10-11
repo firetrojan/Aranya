@@ -30,7 +30,6 @@ import org.aranya.app.data.source.SourceRecord
 import org.aranya.app.data.source.SourceRegistry
 import org.aranya.app.data.source.SourceStatus
 import org.aranya.app.data.source.sourceSummary
-import org.aranya.app.ui.theme.AranyaSemanticColors
 import org.aranya.app.ui.theme.AranyaSpacing
 import org.aranya.app.ui.theme.AranyaTheme
 import org.aranya.app.ui.theme.AranyaSize

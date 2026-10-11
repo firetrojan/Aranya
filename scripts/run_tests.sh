@@ -38,6 +38,7 @@ run "kotlin integrity"     data-pipeline/tests/verify_kotlin_integrity.py
 run "icons in core"        data-pipeline/tests/verify_icons.py
 run "docs consistency"     data-pipeline/tests/verify_docs_consistency.py
 run "gradle versions"      data-pipeline/tests/verify_gradle_versions.py
+run "gradle aliases"      data-pipeline/tests/verify_gradle_aliases.py
 
 echo ""
 echo "=== registry snapshot is current ==="

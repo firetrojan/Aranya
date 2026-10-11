@@ -157,12 +157,40 @@ def check_destination_saveable():
     return problems
 
 
+# Property-delegate operators used via `by`, plus composable/preview helpers that are
+# invoked indirectly. These never appear as a bare call site, so treating them as unused
+# would be a false positive.
+INDIRECT = {"getValue", "setValue", "provideDelegate"}
+
+
+def check_unused_imports():
+    """
+    Flag imports whose simple name never appears in the file body.
+
+    Not a compile error, but an unused import in a file this size is usually a leftover
+    from a deleted composable, which is how dead code and wrong API assumptions creep in.
+    """
+    problems = []
+    for path in files_under(""):
+        text = open(path, encoding="utf-8").read()
+        imports = re.findall(r"^import\s+([\w.]+)(?:\s+as\s+(\w+))?\s*$", text, re.M)
+        body = "\n".join(l for l in text.split("\n") if not l.startswith("import "))
+        for full, alias in imports:
+            simple = alias or full.rsplit(".", 1)[-1]
+            if simple == "*" or simple in INDIRECT:
+                continue
+            if not re.search(r"\b%s\b" % re.escape(simple), body):
+                problems.append("%s: unused import %s" % (os.path.relpath(path, ROOT), full))
+    return problems
+
+
 CHECKS = [
     ("no duplicate imports", check_duplicate_imports),
     ("own-package imports resolve", lambda: check_own_imports(declared_packages())),
     ("callback arities match", check_callback_arities),
     ("no stale string references", check_stale_symbols),
     ("rememberSaveable is safe", check_destination_saveable),
+    ("no unused imports", check_unused_imports),
 ]
 
 
