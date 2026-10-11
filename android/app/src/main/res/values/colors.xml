@@ -2,4 +2,12 @@
 <resources>
     <!-- Mirrors Ivory in Color.kt so the pre-Compose window matches the app background. -->
     <color name="aranya_window_background">#FBF9F4</color>
+
+    <!--
+      Base declaration for the dark launch window. Required because the
+      values-night variant overrides it; without a base, a non-night configuration
+      cannot resolve the name and the launch theme can crash on startup.
+    -->
+    <color name="aranya_window_background_dark">#11150F</color>
+
 </resources>

@@ -1,5 +1,6 @@
 package org.aranya.app.data.weather
 
+import org.aranya.app.ui.weather.WeatherCodes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

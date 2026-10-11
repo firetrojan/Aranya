@@ -125,7 +125,54 @@ def main():
         except Exception as exc:
             failures.append("sources_snapshot.json is not valid JSON: %s" % exc)
 
-    # 5. Build config sanity: minSdk/targetSdk present and coherent.
+    # 5b. Every resource declared in a qualified values-* folder must also exist in the
+    #     base values folder. A qualified-only resource cannot be resolved when the
+    #     configuration does not match, which crashes the launch theme at startup.
+    #     (Lint issue MissingDefaultResource; this was a real Stage 02 CI failure.)
+    base_values = {}
+    qual_values = {}
+    res_main = os.path.join(KT, "main", "res")
+    for d in sorted(os.listdir(res_main)):
+        if not d.startswith("values"):
+            continue
+        path = os.path.join(res_main, d, "strings.xml")
+        if not os.path.exists(path):
+            continue
+        text = open(path, encoding="utf-8").read()
+        if d == "values":
+            base_values.update(
+                (m.group(1), m.group(2)) for m in re.finditer(
+                    r'<(string|plurals|color)\s+name="([^"]+)"', text))
+        else:
+            qual_values.setdefault(d, {}).update(
+                (m.group(1), m.group(2)) for m in re.finditer(
+                    r'<(string|plurals|color)\s+name="([^"]+)"', text))
+
+    colors_base = set()
+    colors_qual = {}
+    for d in sorted(os.listdir(res_main)):
+        if not d.startswith("values"):
+            continue
+        path = os.path.join(res_main, d, "colors.xml")
+        if not os.path.exists(path):
+            continue
+        text = open(path, encoding="utf-8").read()
+        names = set(re.findall(r'<color\s+name="([^"]+)"', text))
+        if d == "values":
+            colors_base |= names
+        else:
+            colors_qual.setdefault(d, set()).update(names)
+
+    for d, names in colors_qual.items():
+        missing_colors = names - colors_base
+        checked += len(names)
+        if missing_colors:
+            failures.append(
+                "res/%s/colors.xml declares %s with no base values/colors.xml entry; "
+                "Lint MissingDefaultResource, and it can crash the launch theme"
+                % (d, ", ".join(sorted(missing_colors))))
+
+    # 6. Build config sanity: minSdk/targetSdk present and coherent.
     checked += 1
     gradle = os.path.join(ROOT, "android", "app", "build.gradle.kts")
     gtext = open(gradle, encoding="utf-8").read() if os.path.exists(gradle) else ""
