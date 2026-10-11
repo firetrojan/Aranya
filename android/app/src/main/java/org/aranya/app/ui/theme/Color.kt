@@ -41,7 +41,9 @@ internal val Bark100 = Color(0xFFF0E6DA)
 
 internal val Ivory = Color(0xFFFBF9F4) // app background, light
 internal val IvorySunk = Color(0xFFF2EFE7) // grouped/sunken surface, light
-internal val Parchment = Color(0xFFFFFFFF) // raised content surface, light
+internal val Parchment = Color(0xFFFDFCFA) // raised content surface, light
+// Not pure white: pure #FFF is harsh on a low-quality panel, and this is the
+// surface most body text sits on.
 internal val Charcoal = Color(0xFF23261F) // primary text, light
 internal val Slate = Color(0xFF4E5349) // secondary text, light
 internal val OutlineWarm = Color(0xFFBFC2B6)
@@ -83,9 +85,14 @@ internal val PositiveDark = Color(0xFF8FBF97)
 // deuteranopia/protanopia; never rely on hue alone.
 internal val ChartSeries1Light = Color(0xFF2A6B3C)
 internal val ChartSeries2Light = Color(0xFFA8541B)
-internal val ChartSeries3Light = Color(0xFF1F5E8C)
-internal val ChartSeries4Light = Color(0xFF5A4A38)
-internal val ChartSeries1Dark = Color(0xFF8FBF97)
-internal val ChartSeries2Dark = Color(0xFFE0A26A)
-internal val ChartSeries3Dark = Color(0xFF7FB6DC)
-internal val ChartSeries4Dark = Color(0xFFC9B08A)
+internal val ChartSeries3Light = Color(0xFF15527D)
+internal val ChartSeries4Light = Color(0xFF6B573F)
+
+internal val ChartSeries1Light = Color(0xFF374236)
+internal val ChartSeries2Light = Color(0xFFFAA554)
+internal val ChartSeries3Light = Color(0xFF4290C7)
+internal val ChartSeries4Light = Color(0xFF736048)
+internal val ChartSeries1Dark = Color(0xFF86A182)
+internal val ChartSeries2Dark = Color(0xFFFFD26B)
+internal val ChartSeries3Dark = Color(0xFF30688F)
+internal val ChartSeries4Dark = Color(0xFF43382A)

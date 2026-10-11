@@ -32,6 +32,7 @@ run "source registry"      data-pipeline/tests/test_sources_registry.py
 run "normalization"        data-pipeline/tests/test_normalize.py
 run "schemas"              data-pipeline/tests/test_schemas.py
 run "palette contrast"     data-pipeline/tests/verify_palette_contrast.py
+run "chart series"       data-pipeline/tests/verify_chart_series.py
 run "source policy"        data-pipeline/tests/verify_source_policy.py
 run "android sources"      data-pipeline/tests/verify_android_sources.py
 run "kotlin integrity"     data-pipeline/tests/verify_kotlin_integrity.py
