@@ -134,7 +134,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
+      # Same reasoning as the other Android jobs: android-actions/setup-android@v3 runs
+      # `sdkmanager tools`, a subcommand removed from cmdline-tools 16.0, and fails.
+      - name: Set up Android SDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" "platforms;android-34" "build-tools;34.0.0" \
+            "emulator" "system-images;android-34;google_apis;x86_64"
 
       - name: Enable KVM for the emulator
         run: |

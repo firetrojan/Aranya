@@ -196,6 +196,38 @@ def main():
                     "Lint FullBackupContent fails the release build"
                     % (rules, domain, rpath))
 
+    # 5d. No job may use android-actions/setup-android@v3.
+    #     Its last step runs `sdkmanager tools`, a subcommand removed from cmdline-tools
+    #     16.0, so it fails on current runners. Stage 02 removed it from three jobs and
+    #     then reintroduced it in a fourth. This keeps that from happening again.
+    ci = os.path.join(ROOT, ".github", "workflows", "ci.yml")
+    if os.path.exists(ci):
+        text = open(ci, encoding="utf-8").read()
+        checked += 1
+        offenders = [
+            (i, l.strip()) for i, l in enumerate(text.split("\n"), 1)
+            if "android-actions/setup-android" in l and not l.strip().startswith("#")
+        ]
+        if offenders:
+            failures.append(
+                ".github/workflows/ci.yml uses android-actions/setup-android at line(s) %s; "
+                "that action fails on current runners, use sdkmanager directly"
+                % ", ".join(str(i) for i, _ in offenders))
+
+        # Every Gradle invocation must run from android/, the actual build root. Scoped to
+        # the current step: a wider lookback would find the previous job's
+        # working-directory and pass a command that has none.
+        for m in re.finditer(r"^(\s*)run:\s*(\./gradlew[^\n]*)$", text, re.M):
+            checked += 1
+            line_no = text[:m.start()].count("\n") + 1
+            step_start = text.rfind("\n      - name:", 0, m.start())
+            step_start = step_start if step_start != -1 else max(0, m.start() - 300)
+            step = text[step_start:m.start()]
+            if "working-directory: android" not in step:
+                failures.append(
+                    "ci.yml line %d runs a gradlew command without "
+                    "working-directory: android" % line_no)
+
     # 6. Build config sanity: minSdk/targetSdk present and coherent.
     checked += 1
     gradle = os.path.join(ROOT, "android", "app", "build.gradle.kts")
