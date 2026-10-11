@@ -30,6 +30,7 @@ run "schemas"              data-pipeline/tests/test_schemas.py
 run "palette contrast"     data-pipeline/tests/verify_palette_contrast.py
 run "source policy"        data-pipeline/tests/verify_source_policy.py
 run "android sources"      data-pipeline/tests/verify_android_sources.py
+run "docs consistency"     data-pipeline/tests/verify_docs_consistency.py
 
 echo ""
 echo "=== registry snapshot is current ==="
