@@ -172,6 +172,30 @@ def main():
                 "Lint MissingDefaultResource, and it can crash the launch theme"
                 % (d, ", ".join(sorted(missing_colors))))
 
+    # 5c. An <exclude> that is not inside an <include>d path is meaningless, and Lint
+    #     reports it as FullBackupContent, which fails the release build.
+    #     (Real Stage 02 CI failure.)
+    for rules, container in (("backup_rules.xml", "full-backup-content"),
+                             ("data_extraction_rules.xml", "data-extraction-rules")):
+        path = os.path.join(KT, "main", "res", "xml", rules)
+        if not os.path.exists(path):
+            continue
+        text = open(path, encoding="utf-8").read()
+        checked += 1
+        excludes = re.findall(r'<exclude\s+domain="([^"]+)"\s+path="([^"]+)"', text)
+        includes = re.findall(r'<include\s+domain="([^"]+)"\s+path="([^"]+)"', text)
+        for domain, rpath in excludes:
+            covered = False
+            for idomain, ipath in includes:
+                if idomain == domain and (ipath == "." or rpath.startswith(ipath)):
+                    covered = True
+                    break
+            if not covered:
+                failures.append(
+                    "res/xml/%s excludes domain=%s path=%s but no <include> covers it; "
+                    "Lint FullBackupContent fails the release build"
+                    % (rules, domain, rpath))
+
     # 6. Build config sanity: minSdk/targetSdk present and coherent.
     checked += 1
     gradle = os.path.join(ROOT, "android", "app", "build.gradle.kts")

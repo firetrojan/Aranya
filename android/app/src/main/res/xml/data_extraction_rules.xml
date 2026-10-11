@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Android 12+ data extraction rules. Same reasoning as backup_rules.xml: cached retrieved
-  data is disposable and excluded, small preferences are kept.
+  Android 12+ data extraction rules. Same reasoning as backup_rules.xml: only small
+  preferences travel, and the cached weather reading stays on the device.
+
+  Cloud backup and device transfer differ slightly: a direct device-to-device transfer
+  is an explicit user action with the phone in hand, so the cached reading is included
+  there to avoid a needless re-fetch. It is still never sent to a cloud service.
 -->
 <data-extraction-rules>
     <cloud-backup>
         <include domain="sharedpref" path="." />
         <include domain="file" path="datastore" />
-        <exclude domain="database" path="aranya_cache.db" />
-        <exclude domain="file" path="sources/" />
     </cloud-backup>
     <device-transfer>
         <include domain="sharedpref" path="." />

@@ -2,15 +2,15 @@
 <!--
   Backup rules.
 
-  Aranya's cached data (source registry snapshot, later retrieved observations) is
-  disposable: any of it can be re-fetched. Excluding it keeps backups small and avoids
-  pushing a user's agronomic history onto cloud backup the user did not choose.
+  Aranya's cached data (the last retrieved weather reading) is disposable: it can be
+  re-fetched. Excluding it keeps backups small and avoids pushing a user's agronomic
+  history onto a cloud backup they did not choose.
 
-  User preferences (chosen district, language, theme) are small and worth restoring.
+  Only two things are included, so everything else is excluded implicitly. Explicit
+  <exclude> entries are therefore unnecessary and Lint rejects excludes that do not sit
+  inside an included path.
 -->
 <full-backup-content>
     <include domain="sharedpref" path="." />
     <include domain="file" path="datastore" />
-    <exclude domain="database" path="aranya_cache.db" />
-    <exclude domain="file" path="sources/" />
 </full-backup-content>
