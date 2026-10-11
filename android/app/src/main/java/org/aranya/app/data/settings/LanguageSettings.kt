@@ -1,8 +1,8 @@
 package org.aranya.app.data.settings
 
 import android.content.Context
-import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -68,11 +68,12 @@ class LanguageSettings(private val context: Context) {
     fun applyNow(tag: String) = apply(tag)
 
     private fun apply(tag: String) {
-        // LocaleList.forLanguageTags returns a non-null LocaleList; an empty tag list is
+        // LocaleListCompat is required, not android.os.LocaleList: AppCompatDelegate
+        // takes the compat type and handles the pre-API-24 path itself. An empty list is
         // the documented way to clear the override and follow the device again.
-        val locales: LocaleList =
-            if (tag == LANGUAGE_SYSTEM) LocaleList.getEmptyLocaleList()
-            else LocaleList.forLanguageTags(tag)
+        val locales: LocaleListCompat =
+            if (tag == LANGUAGE_SYSTEM) LocaleListCompat.getEmptyLocaleList()
+            else LocaleListCompat.forLanguageTags(tag)
         AppCompatDelegate.setApplicationLocales(locales)
     }
 }
