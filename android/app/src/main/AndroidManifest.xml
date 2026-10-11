@@ -2,17 +2,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
-      Stage 01 declares no permissions.
+      Stage 02 permissions: added with the weather feature that genuinely needs them.
 
-      This is deliberate, not an oversight. Aranya asks for a permission only when the user
-      invokes a feature that needs it, so an app that currently shows a source registry
-      needs none. INTERNET arrives in Stage 02 with the first real retrieval; ACCESS_NETWORK_STATE
-      alongside it so offline handling can be correct rather than optimistic.
+      INTERNET           - fetching the forecast from the provider.
+      ACCESS_NETWORK_STATE - so the app can tell "no connection" apart from "source is
+                            down", and serve cached data with an accurate reason instead of
+                            a generic failure.
 
-      No location permission: district selection in Stage 02 is manual entry or a coarse
-      administrative area, not GPS. Tracking a farmer's exact position is not necessary for
-      agricultural advice and would be a privacy cost out of proportion to the benefit.
+      Both are normal, non-special permissions granted at install with no dialog.
+
+      Still NO location permission. Weather is requested for a district-scale coordinate the
+      user chooses or types, not for a GPS fix. Asking for precise location to show a
+      forecast for a district would be a privacy cost out of proportion to the benefit.
+      See docs/PRIVACY.md section 3.
     -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"

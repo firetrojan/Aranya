@@ -129,4 +129,72 @@
         <item quantity="other">%d sources registered</item>
     </plurals>
 
+<!-- ============================ weather ================================ -->
+    <!--
+      Weather wording follows the honesty rules. These are model forecasts, never
+      observations, and the UI says "forecast" rather than "weather now" to avoid implying
+      a measurement that no ground station produced.
+    -->
+    <string name="weather_title">Weather</string>
+    <string name="weather_choose_location">Choose a location</string>
+    <string name="weather_location_hint">Location name</string>
+    <string name="weather_use_preset">Tap a location to load its forecast</string>
+    <string name="weather_current_heading">Current conditions</string>
+    <string name="weather_forecast_heading">5-day forecast</string>
+    <string name="weather_temperature">Temperature</string>
+    <string name="weather_feels_like">Feels like %1$s</string>
+    <string name="weather_humidity">Humidity %1$s</string>
+    <string name="weather_precipitation">Rainfall %1$s</string>
+    <string name="weather_wind">Wind %1$s</string>
+    <string name="weather_forecast_precipitation">Rain chance %1$s</string>
+    <string name="weather_range">%1$s to %2$s</string>
+    <string name="weather_modelled_notice">Model forecast, not an on-the-ground measurement. Use for planning, not for a specific field.</string>
+    <string name="provider_label">Data from %1$s</string>
+    <string name="licence_label">Licence: %1$s</string>
+    <string name="licence_non_commercial_notice">Open-Meteo\'s free service is for non-commercial use only. Aranya carries no subscriptions or advertising. Any commercial release must replace this provider.</string>
+    <string name="weather_today">Today</string>
+
+    <!-- location input validation -->
+    <string name="location_error_empty">Enter a location name</string>
+    <string name="location_error_too_long">That name is too long</string>
+    <string name="location_error_digits">A location name should not contain numbers</string>
+    <string name="location_error_unknown">That location is not in the list yet. Choosing a listed location works for now; full place search comes later.</string>
+
+    <!-- weather states -->
+    <string name="state_no_weather_data">No weather was returned for this location</string>
+    <string name="weather_showing_cached">Showing the last saved reading from %1$s</string>
+    <string name="weather_offline_cached">No connection. Showing the reading saved on this phone from %1$s.</string>
+    <string name="weather_error_with_cached">Could not refresh. Showing the reading saved on %1$s.</string>
+    <string name="state_refreshing">Refreshing&#8230;</string>
+
+    <!-- weather codes (WMO 4677 present weather codes), plain-language descriptions -->
+    <string name="wmo_0">Clear sky</string>
+    <string name="wmo_1">Mainly clear</string>
+    <string name="wmo_2">Partly cloudy</string>
+    <string name="wmo_3">Overcast</string>
+    <string name="wmo_45">Fog</string>
+    <string name="wmo_48">Rime fog</string>
+    <string name="wmo_51">Light drizzle</string>
+    <string name="wmo_53">Drizzle</string>
+    <string name="wmo_55">Heavy drizzle</string>
+    <string name="wmo_56">Freezing drizzle</string>
+    <string name="wmo_57">Heavy freezing drizzle</string>
+    <string name="wmo_61">Light rain</string>
+    <string name="wmo_63">Rain</string>
+    <string name="wmo_65">Heavy rain</string>
+    <string name="wmo_66">Freezing rain</string>
+    <string name="wmo_67">Heavy freezing rain</string>
+    <string name="wmo_71">Light snow</string>
+    <string name="wmo_73">Snow</string>
+    <string name="wmo_75">Heavy snow</string>
+    <string name="wmo_77">Snow grains</string>
+    <string name="wmo_80">Light showers</string>
+    <string name="wmo_81">Showers</string>
+    <string name="wmo_82">Violent showers</string>
+    <string name="wmo_85">Light snow showers</string>
+    <string name="wmo_86">Heavy snow showers</string>
+    <string name="wmo_95">Thunderstorm</string>
+    <string name="wmo_96">Thunderstorm with hail</string>
+    <string name="wmo_99">Severe thunderstorm with hail</string>
+
 </resources>

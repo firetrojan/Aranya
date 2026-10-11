@@ -12,10 +12,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Row
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,30 +37,54 @@ import org.aranya.app.ui.theme.AranyaSemanticColors
 import org.aranya.app.ui.theme.AranyaSpacing
 import org.aranya.app.ui.theme.AranyaSize
 import org.aranya.app.ui.theme.AranyaTheme
+import org.aranya.app.data.weather.WeatherLocation
+import org.aranya.app.ui.weather.WeatherScreen
+import org.aranya.app.ui.weather.WeatherUiState
 
 /**
- * Stage 01 application shell.
+ * Stage 02 application shell.
  *
- * This screen deliberately does NOT present agricultural data. Stage 01 built the
- * foundation, the design system and the source registry; no weather, soil, market or
- * policy feature works yet. The shell says so plainly rather than showing sample figures
- * that could be mistaken for real readings.
+ * Two destinations now exist: Weather, which works, and Sources, which reports the real
+ * registry. Navigation is a single flat switch rather than a navigation library: with two
+ * destinations a back stack, routes and arguments would be scaffolding for a structure
+ * that does not exist yet. A predictable flat list is also easier for a first-time user
+ * than a nested menu.
  *
- * It exists to validate the design system on a real device: type scale, fixed palette,
- * spacing rhythm, small-screen layout.
+ * The shell no longer claims to be stage-only. Weather fetches real data, and the sources
+ * screen reports the registry truthfully.
  */
 @Composable
 fun AranyaShell(
     registry: SourceRegistry,
+    weatherState: WeatherUiState,
+    onSelectLocation: (WeatherLocation) -> Unit,
+    onSubmitTypedLocation: (String) -> Unit,
+    onRetryWeather: () -> Unit,
     modifier: Modifier = Modifier,
+    initialDestination: Destination = Destination.WEATHER,
 ) {
-    val context = LocalContext.current
+    var destination by rememberSaveable { mutableStateOf(initialDestination) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
-        // No bottom bar and no FAB yet: with one real destination, navigation chrome would
-        // be decoration. Added in Stage 02 when there are actual destinations.
+        bottomBar = {
+            // Two real destinations, so navigation is now warranted. Flat and predictable:
+            // every function is one tap away with no nesting.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                Destination.entries.forEach { entry ->
+                    NavigationBarItem(
+                        selected = destination == entry,
+                        onClick = { destination = entry },
+                        icon = { Icon(entry.icon, contentDescription = null) },
+                        label = { Text(stringResource(entry.labelRes)) },
+                    )
+                }
+            }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -63,40 +94,43 @@ fun AranyaShell(
                 .padding(
                     start = AranyaSpacing.lg,
                     end = AranyaSpacing.lg,
-                    top = AranyaSpacing.xl,
+                    top = AranyaSpacing.md,
                     bottom = AranyaSpacing.xxl,
                 ),
             verticalArrangement = Arrangement.spacedBy(AranyaSpacing.lg),
         ) {
-            Masthead()
+            when (destination) {
+                Destination.WEATHER -> WeatherScreen(
+                    state = weatherState,
+                    onSelectLocation = onSelectLocation,
+                    onSubmitTyped = onSubmitTypedLocation,
+                    onRetry = onRetryWeather,
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
-            // Honest stage notice, not a fake dashboard.
-            StageNotice()
-
-            PaletteNote()
-
-            Divider()
-
-            Text(
-                text = stringResource(R.string.shell_theme_label),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = stringResource(R.string.shell_theme_system),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Divider()
-
-            // The one genuinely useful Stage 01 screen: what Aranya has actually checked.
-            SourceStatusScreen(
-                registry = registry,
-                modifier = Modifier.fillMaxWidth(),
-            )
+                Destination.SOURCES -> {
+                    Masthead()
+                    Divider()
+                    SourceStatusScreen(
+                        registry = registry,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
         }
     }
+}
+
+/**
+ * The two destinations available in Stage 02.
+ *
+ * Icons come from `material-icons-core` only. The extended artifact costs several MB,
+ * which conflicts with the size budget, so the set is deliberately limited to core icons
+ * and checked by `data-pipeline/tests/verify_icons.py`.
+ */
+enum class Destination(val labelRes: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    WEATHER(R.string.weather_title, androidx.compose.material.icons.Icons.Filled.DateRange),
+    SOURCES(R.string.sources_title, androidx.compose.material.icons.Icons.Filled.List),
 }
 
 @Composable

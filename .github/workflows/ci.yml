@@ -54,6 +54,14 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      # compileSdk 34 is not guaranteed on the runner image. Install it explicitly and
+      # accept licences non-interactively; without this the build fails on a missing SDK
+      # or an unaccepted licence rather than on anything to do with Aranya.
+      - name: Install Android SDK 34
+        run: |
+          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+          yes | sdkmanager --licenses > /dev/null
+
       - uses: gradle/actions/setup-gradle@v3
 
       - name: Generate the Gradle wrapper
@@ -118,6 +126,11 @@ jobs:
           java-version: '17'
 
       - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 34
+        run: |
+          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+          yes | sdkmanager --licenses > /dev/null
 
       - uses: gradle/actions/setup-gradle@v3
 

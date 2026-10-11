@@ -1,22 +1,26 @@
-#!/system/bin/sh
-# Run every test that can execute in this environment.
+#!/usr/bin/env bash
+# Run every test that does not need an Android device.
 #
-# Gradle cannot run here (see docs/ARCHITECTURE.md), so the Kotlin unit and instrumented
-# tests are unverified. This runs everything that does not need a device or Gradle.
+# Portable: uses whatever `python3` is on PATH, so it works on CI, on a developer
+# machine, and on a Linux environment. Do not hardcode an interpreter path here; an
+# earlier version did and failed on GitHub Actions.
 #
-# Usage: sh scripts/run_tests.sh
-L=/data/user/0/com.androidharness.app/files/linux
-# python3 here is an ELF binary that must be launched through the platform linker, so it
-# cannot be invoked as `sh script.py`. Use the launcher that works on this device.
-PYSH="$L/bin/bash -c"
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+# Usage: bash scripts/run_tests.sh
+set -u
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 1
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "python3 not found on PATH. Install Python 3.9 or newer." >&2
+  exit 1
+fi
 
 FAILED=0
 run() {
   echo ""
   echo "=== $1 ==="
-  if "$L/bin/python3" "$2"; then
+  if python3 "$2"; then
     echo "--- OK: $1"
   else
     echo "--- FAILED: $1"
@@ -34,7 +38,7 @@ run "docs consistency"     data-pipeline/tests/verify_docs_consistency.py
 
 echo ""
 echo "=== registry snapshot is current ==="
-if "$L/bin/python3" data-pipeline/sources/build_snapshot.py; then
+if python3 data-pipeline/sources/build_snapshot.py; then
   echo "--- OK: snapshot"
 else
   echo "--- FAILED: snapshot"
