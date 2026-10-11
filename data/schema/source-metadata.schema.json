@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aranya.org/schema/source-metadata.schema.json",
+  "title": "Aranya source metadata (record envelope)",
+  "description": "The envelope wrapped around every value that enters Aranya. It records provenance, the retrieval attempt, and any degradation, so a value can always be traced back to a registry entry and a retrieval event.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "source_id", "retrieval", "freshness"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Incremented only on breaking change; consumers must reject versions they do not understand rather than guess."
+    },
+    "record_id": {
+      "type": ["string", "null"],
+      "description": "Stable identifier for this record within the local database, if it has been persisted."
+    },
+    "source_id": {
+      "type": "string",
+      "description": "Must match the `id` of an entry in data/sources.yml.",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "retrieval": { "$ref": "#/$defs/retrieval" },
+    "freshness": { "$ref": "https://aranya.org/schema/freshness.schema.json" },
+    "uncertainty": {
+      "oneOf": [
+        { "$ref": "https://aranya.org/schema/uncertainty.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "geo": {
+      "type": ["object", "null"],
+      "description": "Spatial footprint. A point result carries an exact location; a region result carries an explicit extent so partial coverage is visible.",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["point", "polygon", "admin_region"] },
+        "lon": { "type": ["number", "null"], "minimum": -180, "maximum": 180 },
+        "lat": { "type": ["number", "null"], "minimum": -90, "maximum": 90 },
+        "admin_code": {
+          "type": ["string", "null"],
+          "description": "India administrative code (state/district) where one applies. Keeps India-wide defaults configurable for a future pilot region."
+        }
+      }
+    },
+    "licence": {
+      "type": ["object", "null"],
+      "description": "Carried with the data so an export or cached copy can never lose its licence.",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": ["string", "null"], "description": "e.g. CC-BY-4.0, ODbL-1.0, GODL-India" },
+        "attribution_required": { "type": ["boolean", "null"] },
+        "attribution_text": { "type": ["string", "null"] },
+        "verified_on": { "type": ["string", "null"], "format": "date" }
+      }
+    }
+  },
+  "$defs": {
+    "retrieval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempted_at", "outcome"],
+      "properties": {
+        "attempted_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": ["string", "null"], "format": "date-time" },
+        "outcome": {
+          "type": "string",
+          "enum": ["ok", "partial", "failed", "not_attempted", "skipped_unavailable"],
+          "description": "'partial' means some requested fields arrived; the response must then set freshness.partial = true."
+        },
+        "http_status": { "type": ["integer", "null"], "minimum": 100, "maximum": 599 },
+        "error": { "oneOf": [{ "$ref": "#/$defs/error" }, { "type": "null" }] },
+        "bytes": { "type": ["integer", "null"], "minimum": 0, "description": "Payload size, used to keep network transfer bounded and auditable." },
+        "cache": { "type": "string", "enum": ["network", "cache", "stale_cache", "manual"], "default": "network" }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "message_key"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["network", "timeout", "dns", "tls", "http", "auth", "rate_limited", "parse", "validation", "not_implemented", "unavailable", "unknown"]
+        },
+        "message_key": {
+          "type": "string",
+          "description": "Localization key into the app string resources. Errors are NEVER rendered as raw exception text to the farmer; a known key is shown and the technical detail stays in the log."
+        },
+        "detail": { "type": ["string", "null"], "description": "Technical detail for logs only. May contain URLs and status codes; never shown as the primary message." },
+        "retryable": { "type": "boolean", "description": "Whether an automatic retry is worthwhile." },
+        "retry_after_seconds": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema_version": 1,
+      "record_id": null,
+      "source_id": "open_meteo_forecast",
+      "retrieval": {
+        "attempted_at": "2026-10-10T08:12:00Z",
+        "completed_at": "2026-10-10T08:12:44Z",
+        "outcome": "ok",
+        "http_status": 200,
+        "error": null,
+        "bytes": 4821,
+        "cache": "network"
+      },
+      "freshness": {
+        "as_of": "2026-10-11T00:00:00+05:30",
+        "retrieved_at": "2026-10-10T08:12:44Z",
+        "provider": "open_meteo_forecast",
+        "expected_refresh_interval": "PT6H",
+        "state": "fresh",
+        "partial": false
+      },
+      "uncertainty": {
+        "kind": "modelled",
+        "basis": "numerical_model",
+        "spatial_resolution_m": 9000,
+        "suitable_for": ["national", "state", "district", "block"],
+        "prohibited_claims": ["measured rainfall at your field"],
+        "confidence_label": "moderate",
+        "evidence_refs": []
+      },
+      "licence": {
+        "id": "CC-BY-4.0",
+        "attribution_required": true,
+        "attribution_text": "Weather data by Open-Meteo.com",
+        "verified_on": "2026-10-10"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_id": null,
+      "source_id": "open_meteo_forecast",
+      "retrieval": {
+        "attempted_at": "2026-10-10T08:12:00Z",
+        "completed_at": null,
+        "outcome": "failed",
+        "http_status": null,
+        "error": {
+          "kind": "timeout",
+          "message_key": "error_network_timeout",
+          "detail": "SocketTimeoutException after 15000ms",
+          "retryable": true,
+          "retry_after_seconds": null
+        },
+        "bytes": null,
+        "cache": "network"
+      },
+      "freshness": {
+        "as_of": null,
+        "retrieved_at": null,
+        "expected_refresh_interval": "PT6H",
+        "state": "unknown",
+        "partial": false
+      },
+      "uncertainty": null
+    }
+  ]
+}

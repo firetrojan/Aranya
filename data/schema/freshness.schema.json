@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aranya.org/schema/freshness.schema.json",
+  "title": "Aranya data freshness",
+  "description": "Every value Aranya displays carries a Freshness record so the UI can state when data was observed, retrieved, and how stale it is now. Freshness is never inferred; if it is unknown it is null, not guessed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["as_of", "retrieved_at", "expected_refresh_interval", "state"],
+  "properties": {
+    "as_of": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "The time the observation itself describes (e.g. forecast valid time, or the trading day of a mandi price). Null when the provider does not state it. NOT the retrieval time."
+    },
+    "retrieved_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "UTC instant Aranya received the value. Null only for values that were never retrieved (for example a user-entered manual reading, which instead sets manual_entry_at)."
+    },
+    "manual_entry_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Set instead of retrieved_at when a human typed the value, e.g. a farmer entering their own Soil Health Card result."
+    },
+    "provider": {
+      "type": ["string", "null"],
+      "description": "Stable source id from data/sources.yml. Null for manual or derived values."
+    },
+    "expected_refresh_interval": {
+      "type": "string",
+      "pattern": "^P(?!$)",
+      "description": "ISO-8601 duration after which the value should be considered stale, e.g. P1D. Chosen per data category, not per provider marketing claim."
+    },
+    "state": {
+      "type": "string",
+      "enum": ["live", "fresh", "aging", "stale", "expired", "unknown"],
+      "description": "Derived from as_of/retrieved_at versus expected_refresh_interval. 'unknown' when no timestamp is available and must be shown to the user rather than hidden."
+    },
+    "partial": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when this record covers only part of the requested spatial or temporal extent, so the UI must not imply completeness."
+    }
+  },
+  "examples": [
+    {
+      "as_of": "2026-10-10T00:00:00+05:30",
+      "retrieved_at": "2026-10-10T08:12:44Z",
+      "provider": "nasa_power",
+      "expected_refresh_interval": "P1D",
+      "state": "fresh",
+      "partial": false
+    },
+    {
+      "as_of": null,
+      "retrieved_at": null,
+      "manual_entry_at": "2026-10-09T17:40:00+05:30",
+      "provider": null,
+      "expected_refresh_interval": "P180D",
+      "state": "fresh",
+      "partial": false
+    }
+  ]
+}

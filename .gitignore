@@ -1,0 +1,23 @@
+# Android build artifacts
+*.iml
+.gradle/
+local.properties
+/build/
+captures/
+.cxx/
+
+# IDE
+.idea/
+*.hprof
+.kotlin/
+
+# OS
+.DS_Store
+
+# Python pipeline
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Harness local tooling (not part of the product)
+.harness/

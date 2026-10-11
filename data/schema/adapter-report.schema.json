@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aranya.org/schema/adapter-report.schema.json",
+  "title": "Aranya source-adapter capability and health report",
+  "description": "Written by a pipeline run to record what each source adapter can actually do and what happened on its last attempt. This is what the in-app Source Status screen renders, and it is what stops a planned integration from being presented as a working one.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "adapters"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "adapters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adapter" }
+    }
+  },
+  "$defs": {
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "integration_status", "can_retrieve"],
+      "properties": {
+        "source_id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "integration_status": {
+          "type": "string",
+          "enum": ["verified", "investigating", "restricted", "unavailable", "not_integrated"],
+          "description": "Must equal the `status` of the matching entry in data/sources.yml. The pipeline never promotes a status on its own."
+        },
+        "can_retrieve": {
+          "type": "boolean",
+          "description": "False whenever integration_status is not 'verified', or when credentials are absent. A non-verified adapter must never be presented in the UI as working."
+        },
+        "implemented": {
+          "type": "boolean",
+          "default": false,
+          "description": "True only when real request and parsing code exists. An interface with no implementation is false."
+        },
+        "requires_credentials": { "type": "boolean" },
+        "credentials_present": { "type": ["boolean", "null"] },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "geography_supported": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Region ids from the configured default_geography or an explicit pilot selection."
+        },
+        "licence": { "$ref": "https://aranya.org/schema/source-metadata.schema.json#/$defs/licence" },
+        "last_attempt": { "oneOf": [{ "$ref": "#/$defs/attempt" }, { "type": "null" }] }
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "outcome"],
+      "properties": {
+        "at": { "type": "string", "format": "date-time" },
+        "outcome": { "type": "string", "enum": ["ok", "partial", "failed", "not_attempted"] },
+        "http_status": { "type": ["integer", "null"] },
+        "latency_ms": { "type": ["integer", "null"], "minimum": 0 },
+        "bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "records_read": { "type": ["integer", "null"], "minimum": 0 },
+        "records_rejected": { "type": ["integer", "null"], "minimum": 0 },
+        "error_kind": {
+          "type": ["string", "null"],
+          "enum": ["network", "timeout", "dns", "tls", "http", "auth", "rate_limited", "parse", "validation", "not_implemented", "unavailable", "unknown", null]
+        },
+        "note": { "type": ["string", "null"], "description": "Operator-facing explanation. Never shown to the farmer." }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema_version": 1,
+      "generated_at": "2026-10-10T08:30:00Z",
+      "adapters": [
+        {
+          "source_id": "nasa_power",
+          "integration_status": "verified",
+          "can_retrieve": true,
+          "implemented": true,
+          "requires_credentials": false,
+          "credentials_present": null,
+          "categories": ["climate"],
+          "geography_supported": ["in"],
+          "licence": {
+            "id": "NASA-open-use",
+            "attribution_required": true,
+            "attribution_text": "NASA Langley Research Center POWER project, NASA Earth Science Division",
+            "verified_on": "2026-10-10"
+          },
+          "last_attempt": {
+            "at": "2026-10-10T08:12:44Z",
+            "outcome": "ok",
+            "http_status": 200,
+            "latency_ms": 1180,
+            "bytes": 9042,
+            "records_read": 10,
+            "records_rejected": 0,
+            "error_kind": null,
+            "note": null
+          }
+        },
+        {
+          "source_id": "agmarknet",
+          "integration_status": "investigating",
+          "can_retrieve": false,
+          "implemented": false,
+          "requires_credentials": false,
+          "credentials_present": null,
+          "categories": ["market"],
+          "geography_supported": ["in"],
+          "licence": null,
+          "last_attempt": {
+            "at": "2026-10-10T08:13:10Z",
+            "outcome": "not_attempted",
+            "http_status": null,
+            "latency_ms": null,
+            "bytes": null,
+            "records_read": null,
+            "records_rejected": null,
+            "error_kind": "not_implemented",
+            "note": "No public API and terms of use unconfirmed. Deliberately not scraped."
+          }
+        }
+      ]
+    }
+  ]
+}

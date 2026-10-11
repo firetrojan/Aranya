@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Stage 01 ships English only. resourceConfigurations in build.gradle.kts is set to "en"
+  so the initial APK carries a single language, keeping the download small.
+
+  Adding a language means adding values-<locale>/strings.xml and nothing else. No screen
+  hardcodes text, so a new locale needs no code change. See docs/ARCHITECTURE.md for the
+  rules on what must and must not be translated.
+-->
+<resources>
+
+    <!-- ============================ app identity ============================ -->
+    <string name="app_name">Aranya</string>
+    <string name="app_tagline">Agricultural information you can check</string>
+
+    <!-- ============================== shell ================================ -->
+    <string name="shell_stage_label">Stage 01 &#8212; foundation only</string>
+    <string name="shell_stage_body">Aranya\'s foundations, source registry and design system are in place. Agricultural features are not built yet. Nothing on this screen is live data.</string>
+    <string name="shell_theme_label">Appearance</string>
+    <string name="shell_theme_system">Follow system</string>
+    <string name="shell_theme_light">Light</string>
+    <string name="shell_theme_dark">Dark</string>
+    <string name="shell_palette_note">Colours are fixed by Aranya, not taken from your wallpaper, so a reading looks the same on every phone.</string>
+
+    <!-- ========================= source registry =========================== -->
+    <string name="sources_title">Data sources</string>
+    <string name="sources_intro">Every source Aranya may use, with what was actually checked and when. A source is only called verified when it was reached and its licence was read.</string>
+    <string name="sources_count">%1$d of %2$d sources usable now</string>
+    <string name="sources_verified">Verified</string>
+    <string name="sources_investigating">Investigating</string>
+    <string name="sources_restricted">Restricted</string>
+    <string name="sources_unavailable">Unavailable</string>
+    <string name="sources_not_integrated">Not integrated</string>
+    <string name="sources_verified_detail">Reachable and licence checked on %1$s.</string>
+    <string name="sources_restricted_detail">Needs credentials or an agreement; not usable yet.</string>
+    <string name="sources_unavailable_detail">Not reachable when probed.</string>
+    <string name="sources_investigating_detail">Reachable, but terms or parameters not yet confirmed.</string>
+    <string name="sources_not_integrated_detail">Registered for a later stage; not assessed yet.</string>
+    <string name="sources_limitation_label">Limits</string>
+    <string name="sources_attribution_label">Attribution</string>
+    <string name="sources_open_registry">Open the registry</string>
+
+    <!-- ====================== qualifiers and honesty ======================= -->
+    <!--
+      These strings are the enforcement of Aranya's core rule. A modelled value must be
+      labelled; a measured one may be stated plainly. The app picks between these keys
+      from the normalized record, never from free text.
+    -->
+    <string name="qualifier_estimate">Estimate</string>
+    <string name="qualifier_measurement">Measurement</string>
+    <string name="qualifier_regional_estimate">Regional estimate, not a reading for your field</string>
+    <string name="qualifier_outdated_estimate">Outdated estimate</string>
+    <string name="qualifier_outdated_measurement">Outdated measurement</string>
+    <string name="qualifier_outdated_regional_estimate">Outdated regional estimate</string>
+
+    <string name="freshness_live">Live</string>
+    <string name="freshness_fresh">Updated %1$s</string>
+    <string name="freshness_aging">Getting old &#183; updated %1$s</string>
+    <string name="freshness_stale">Out of date &#183; updated %1$s</string>
+    <string name="freshness_expired">Too old to rely on &#183; updated %1$s</string>
+    <string name="freshness_unknown">Age unknown</string>
+
+    <string name="attribution_format">Source: %1$s</string>
+    <string name="attribution_modified_copernicus">Contains modified Copernicus Sentinel data (%1$s), processed by Aranya.</string>
+
+    <!-- ============================ data states ============================ -->
+    <string name="state_empty_title">Nothing here yet</string>
+    <string name="state_loading">Loading&#8230;</string>
+    <string name="state_offline_title">No connection</string>
+    <string name="state_offline_body">Showing what was already stored on this phone. It may be out of date.</string>
+    <string name="state_error_title">Could not load this</string>
+    <string name="state_stale_title">Showing stored data</string>
+    <string name="state_stale_body">Aranya could not reach the source, so this is the last copy saved on your phone.</string>
+    <string name="state_retry">Try again</string>
+
+    <!-- ============================ errors ================================= -->
+    <string name="error_network_timeout">The connection took too long.</string>
+    <string name="error_network_unreachable">No connection to the data source.</string>
+    <string name="error_dns">Could not find the data source.</string>
+    <string name="error_tls">The secure connection failed.</string>
+    <string name="error_http">The data source returned an error.</string>
+    <string name="error_auth">This source needs an account or key that Aranya does not have.</string>
+    <string name="error_rate_limited">Too many requests. Try again later.</string>
+    <string name="error_parse">The data from this source could not be read.</string>
+    <string name="error_validation">The data did not pass Aranya\'s checks and was not shown.</string>
+    <string name="error_not_implemented">This feature is not built yet.</string>
+    <string name="error_unavailable">This data source is not available right now.</string>
+    <string name="error_unknown">Something went wrong while loading this.</string>
+
+    <!-- ============================ units ================================== -->
+    <!--
+      Units are formatted with locale-aware number formatting; only these labels are
+      translated. Scientific units stay in Latin script so they remain recognisable in
+      every language.
+    -->
+    <string name="unit_celsius">°C</string>
+    <string name="unit_millimetre">mm</string>
+    <string name="unit_centimetre">cm</string>
+    <string name="unit_hectare">ha</string>
+    <string name="unit_rupees">₹</string>
+    <string name="unit_rupees_per_quintal">₹/quintal</string>
+    <string name="unit_percent">%</string>
+    <string name="unit_micrograms_per_cubic_metre">µg/m³</string>
+
+    <!-- ============================ formatting ============================= -->
+    <string name="format_value_with_unit">%1$s %2$s</string>
+    <string name="format_updated_ago">Updated %1$s</string>
+    <string name="format_sources_summary">%1$d verified &#183; %2$d restricted &#183; %3$d not usable yet</string>
+
+    <!-- ============================ plurals ================================ -->
+    <!--
+      Relative durations use plurals so a translator can supply the grammatical forms the
+      language needs, including languages with more than two.
+    -->
+    <plurals name="duration_minutes">
+        <item quantity="one">%d minute ago</item>
+        <item quantity="other">%d minutes ago</item>
+    </plurals>
+    <plurals name="duration_hours">
+        <item quantity="one">%d hour ago</item>
+        <item quantity="other">%d hours ago</item>
+    </plurals>
+    <plurals name="duration_days">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <plurals name="source_count">
+        <item quantity="one">%d source registered</item>
+        <item quantity="other">%d sources registered</item>
+    </plurals>
+
+</resources>

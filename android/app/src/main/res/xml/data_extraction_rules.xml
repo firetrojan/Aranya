@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ data extraction rules. Same reasoning as backup_rules.xml: cached retrieved
+  data is disposable and excluded, small preferences are kept.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="datastore" />
+        <exclude domain="database" path="aranya_cache.db" />
+        <exclude domain="file" path="sources/" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="datastore" />
+    </device-transfer>
+</data-extraction-rules>

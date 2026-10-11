@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Stage 01 declares no permissions.
+
+      This is deliberate, not an oversight. Aranya asks for a permission only when the user
+      invokes a feature that needs it, so an app that currently shows a source registry
+      needs none. INTERNET arrives in Stage 02 with the first real retrieval; ACCESS_NETWORK_STATE
+      alongside it so offline handling can be correct rather than optimistic.
+
+      No location permission: district selection in Stage 02 is manual entry or a coarse
+      administrative area, not GPS. Tracking a farmer's exact position is not necessary for
+      agricultural advice and would be a privacy cost out of proportion to the benefit.
+    -->
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Aranya">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Aranya">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

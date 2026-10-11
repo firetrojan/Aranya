@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup rules.
+
+  Aranya's cached data (source registry snapshot, later retrieved observations) is
+  disposable: any of it can be re-fetched. Excluding it keeps backups small and avoids
+  pushing a user's agronomic history onto cloud backup the user did not choose.
+
+  User preferences (chosen district, language, theme) are small and worth restoring.
+-->
+<full-backup-content>
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="datastore" />
+    <exclude domain="database" path="aranya_cache.db" />
+    <exclude domain="file" path="sources/" />
+</full-backup-content>

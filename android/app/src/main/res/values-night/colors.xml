@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors Night in Color.kt. -->
+    <color name="aranya_window_background_dark">#11150F</color>
+</resources>

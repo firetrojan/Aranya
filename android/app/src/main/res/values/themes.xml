@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The launch theme is intentionally almost blank. Aranya does not show a splash screen
+      advertising content it does not have yet; it draws its own shell immediately.
+
+      windowBackground uses the same warm ivory as the Compose background so there is no
+      white flash before the first frame, which reads as cheap on a budget device.
+    -->
+    <style name="Theme.Aranya" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/aranya_window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+</resources>

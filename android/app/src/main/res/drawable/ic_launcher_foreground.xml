@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Aranya launcher icon: a sprouted seedling, drawn as a vector.
+
+  Vector rather than PNG so no raster assets are bundled: adaptive icons render crisply at
+  every density from one small XML file, which supports the APK size goal.
+
+  The mark is a single leaf pair on a stem, drawn with flat filled paths in the brand
+  green. It is intentionally simple: launcher icons are seen at roughly 48dp and any
+  detail beyond two leaves disappears.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Stem -->
+    <path
+        android:fillColor="#1E4D2B"
+        android:pathData="M52.5,72 L55.5,72 L55.5,44 L52.5,44 Z" />
+
+    <!-- Left leaf -->
+    <path
+        android:fillColor="#2A6B3C"
+        android:pathData="M51,62 C41,60 34,52 32,42 C43,43 50,51 51,62 Z" />
+
+    <!-- Right leaf, slightly larger to balance the mark -->
+    <path
+        android:fillColor="#2A6B3C"
+        android:pathData="M57,50 C67,48 74,40 76,30 C65,31 58,39 57,50 Z" />
+
+    <!-- Soil line, in the muted earth accent -->
+    <path
+        android:fillColor="#5A4A38"
+        android:pathData="M38,72 L70,72 L70,76 L38,76 Z" />
+</vector>

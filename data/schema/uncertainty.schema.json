@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aranya.org/schema/uncertainty.schema.json",
+  "title": "Aranya value uncertainty and provenance",
+  "description": "Binds an agricultural value to its uncertainty and its evidential basis. This is the mechanism that prevents a modelled soil estimate from ever being presented as a laboratory measurement.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "basis"],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": ["measured", "lab_reported", "remote_sensing", "modelled", "estimated", "user_reported", "unknown"],
+      "description": "How the value came into existence. 'measured' and 'lab_reported' are the only kinds that may be described as a measurement."
+    },
+    "basis": {
+      "type": "string",
+      "enum": ["field_observation", "laboratory_analysis", "station_observation", "satellite_retrieval", "reanalysis", "numerical_model", "statistical_interpolation", "remote_report", "user_input", "unknown"],
+      "description": "The evidential basis. Must be consistent with kind; validated by the normalizer."
+    },
+    "spatial_resolution_m": {
+      "type": ["number", "null"],
+      "exclusiveMinimum": 0,
+      "description": "Nominal ground sample distance or grid cell size in metres. Null when the provider does not state it. This is what makes the resolution limit visible to the UI."
+    },
+    "method_uncertainty": {
+      "type": ["object", "null"],
+      "description": "Spread reported by the provider for this specific value, not a generic figure.",
+      "additionalProperties": false,
+      "properties": {
+        "lower": { "type": ["number", "null"] },
+        "upper": { "type": ["number", "null"] },
+        "confidence_level": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "kind": { "type": "string", "enum": ["standard_deviation", "prediction_interval", "quantile_range", "categorical_confidence"] }
+      }
+    },
+    "suitable_for": {
+      "type": "array",
+      "description": "Decision scales this value may legitimately inform. The UI and rule engine MUST consult this list before making a recommendation.",
+      "items": {
+        "type": "string",
+        "enum": ["national", "state", "district", "block", "village", "field", "plot"]
+      },
+      "uniqueItems": true
+    },
+    "prohibited_claims": {
+      "type": "array",
+      "description": "Explicit phrasings that must never be rendered for this value, given its kind and basis. Enforced as a rendering constraint, not a guideline.",
+      "items": { "type": "string" }
+    },
+    "confidence_label": {
+      "type": ["string", "null"],
+      "enum": ["high", "moderate", "low", "very_low", null],
+      "description": "Plain-language confidence for display. Must be derived from measured evidence, never asserted by a provider's marketing copy."
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Stable ids or citations backing this value, resolvable in data/crop_knowledge or the cited source's documentation."
+    }
+  },
+  "examples": [
+    {
+      "kind": "modelled",
+      "basis": "statistical_interpolation",
+      "spatial_resolution_m": 250,
+      "method_uncertainty": null,
+      "suitable_for": ["national", "state", "district"],
+      "prohibited_claims": ["your soil", "measured value", "lab result", "your field's pH"],
+      "confidence_label": "moderate",
+      "evidence_refs": []
+    },
+    {
+      "kind": "lab_reported",
+      "basis": "laboratory_analysis",
+      "spatial_resolution_m": null,
+      "suitable_for": ["field", "plot"],
+      "prohibited_claims": [],
+      "confidence_label": "high",
+      "evidence_refs": ["user-entered-soil-health-card"]
+    }
+  ]
+}

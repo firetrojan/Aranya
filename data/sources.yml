@@ -1,0 +1,717 @@
+# Aranya agricultural source registry
+#
+# THIS FILE IS A VERIFIED-STATUS LEDGER, NOT A LIST OF THINGS THAT WORK.
+#
+# Status vocabulary (also enforced by data-pipeline/tests/test_sources_registry.py):
+#   verified      - endpoint reached, licence/terms read, response shape confirmed on the
+#                  `verified_on` date below.
+#   investigating - endpoint reachable but licence, terms, or required parameters not yet
+#                  confirmed, so the data is not safe to build on.
+#   restricted    - known to exist and be authoritative, but access requires registration,
+#                  a key, a paid tier, or a negotiated agreement.
+#   unavailable   - endpoint probed and failed (DNS, connection, or HTTP error).
+#   not_integrated- candidate recorded for future stages; access deliberately not assessed
+#                  yet, or a replacement is planned.
+#
+# Honesty rules applied here:
+#   * "verified" means we got a real HTTP response AND read the licence/terms text.
+#     It does NOT mean the data is fit for a farmer-level decision; see `limitations`.
+#   * A source with an unresolved licence question is NOT marked verified.
+#   * Every `last_success` value below is an actual probe result, never a guess.
+#   * `restricted` never becomes a hard build dependency. See docs/ARCHITECTURE.md.
+
+registry_version: 1
+updated_on: "2026-10-10"
+default_geography:
+  id: in
+  name: India
+  note: >-
+    India-wide defaults. A future pilot state or district must be selectable via
+    `geography` without restructuring the app; every adapter reads its region from
+    configuration, never from hardcoded constants.
+
+categories:
+  weather: Weather, forecast and agrometeorological advisories
+  climate: Historical environmental and climate series
+  soil: Soil properties, soil classification and soil test records
+  market: Mandi / regulated market prices
+  statistics: Official crop production and agricultural statistics
+  satellite: Satellite and Earth observation products
+  policy: Agricultural policy, trade, export and scheme documents
+  geo: Geographic base data, boundaries and place names
+
+sources:
+
+  # ---------------------------------------------------------------- weather ---
+
+  - id: open_meteo_forecast
+    name: Open-Meteo Forecast API
+    official_url: https://open-meteo.com/
+    api_url: https://api.open-meteo.com/v1/forecast
+    access_method: rest_json_no_key
+    category: weather
+    geography: global_including_india
+    licence: CC-BY 4.0 (data); free API tier restricted to NON-COMMERCIAL use
+    attribution_required: true
+    attribution_text: "Weather data by Open-Meteo.com"
+    redistribution: >-
+      Displaying fetched values to the end user with attribution is acceptable.
+      Bundling a bulk offline copy of provider data into the APK is NOT
+      contemplated and would breach the size and licensing goals.
+    authentication: none on free tier
+    rate_limits: >-
+      Free tier: <10,000 calls/day, 5,000/hour, 600/minute. Attribution mandatory.
+    update_frequency: hourly model runs
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: verified
+    probe_evidence: data-pipeline/tests/probe_api_shapes.py::open_meteo_full
+    limitations: >-
+      Model output, not an official Indian meteorological product. Grid resolution
+      is far coarser than a field, so this is a fallback and trend source, NOT the
+      authority for warnings in India.
+      CRITICAL COMMERCIAL RISK: the free tier is non-commercial only. If Aranya ever
+      gains ads, subscriptions, or paid distribution, this adapter MUST be swapped for
+      a paid plan or replaced. Tracked in docs/LICENCES.md.
+    fallback: nasa_power (historical context), imd_api (official, restricted)
+
+  - id: open_meteo_air_quality
+    name: Open-Meteo Air Quality API
+    official_url: https://open-meteo.com/en/docs/air-quality-api
+    api_url: https://air-quality-api.open-meteo.com/v1/air-quality
+    access_method: rest_json_no_key
+    category: weather
+    geography: global_including_india
+    licence: CC-BY 4.0 (data); free tier NON-COMMERCIAL only
+    attribution_required: true
+    redistribution: display_only_with_attribution
+    authentication: none on free tier
+    rate_limits: shared with the Open-Meteo free-tier accounting
+    update_frequency: hourly
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: verified
+    probe_evidence: data-pipeline/tests/probe_api_shapes2.py::openmeteo_air_quality
+    limitations: >-
+      Same non-commercial restriction as the forecast API. CAMS-based model output
+      is coarse; not suitable for a field-level air quality claim.
+    fallback: no alternative planned in stage 01
+
+  - id: imd_api
+    name: India Meteorological Department API
+    official_url: https://mausam.imd.gov.in/
+    api_url: https://api.imd.gov.in/
+    access_method: rest_json_api_key_required
+    category: weather
+    geography: india
+    licence: >-
+      Government of India content. Free for registered non-commercial users, but the
+      precise terms text was NOT retrieved and must be read and recorded before use.
+    attribution_required: true
+    attribution_text: "Source: India Meteorological Department"
+    redistribution: >-
+      UNCONFIRMED. Must not be cached or redistributed until terms are read.
+    authentication: >-
+      REQUIRED. Registration plus a Development or Production API key, with a JWT
+      and server/IP binding.
+    rate_limits: governed by issued API key tier; not documented publicly
+    update_frequency: multiple times daily
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: restricted
+    probe_evidence: data-pipeline/tests/probe_api_shapes.py::imd_api_noauth
+    limitations: >-
+      Probed unauthenticated endpoints returned HTTP 404 and the portal requires an
+      account, so no data was retrieved. This is the authoritative Indian weather
+      source and MUST be preferred over model data once an API key exists, but it
+      cannot be built on until registration and terms are complete.
+    fallback: open_meteo_forecast (clearly labelled as non-official model output)
+
+  # ---------------------------------------------------------------- climate ---
+
+  - id: nasa_power
+    name: NASA POWER
+    official_url: https://power.larc.nasa.gov/
+    api_url: https://power.larc.nasa.gov/api/temporal/daily/point
+    access_method: rest_json_no_key
+    category: climate
+    geography: global_including_india
+    licence: >-
+      Freely available for public use by NASA. Not a formal open licence: NASA
+      requests citation and notification rather than imposing licence terms.
+    attribution_required: true
+    attribution_text: >-
+      "The data was obtained from NASA Langley Research Center's Prediction Of
+      Worldwide Energy Resources (POWER) project funded through the NASA Earth
+      Science Division."
+    redistribution: permitted_with_citation; redistribution_notification_requested
+    authentication: none
+    rate_limits: not publicly documented; reasonable use expected
+    update_frequency: daily and monthly
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: verified
+    probe_evidence: data-pipeline/tests/probe_api_shapes.py::nasa_power_point
+    limitations: >-
+      Satellite and reanalysis derived; monthly blocks have processing lag.
+      Not a substitute for a local weather station. Best used for seasonal and
+      historical context, not for today's field decision.
+    fallback: open_meteo_archive
+
+  - id: open_meteo_archive
+    name: Open-Meteo Historical Weather API (ERA5)
+    official_url: https://open-meteo.com/en/docs/historical-weather-api
+    api_url: https://archive-api.open-meteo.com/v1/archive
+    access_method: rest_json_no_key
+    category: climate
+    geography: global_including_india
+    licence: CC-BY 4.0 (data); free tier NON-COMMERCIAL only
+    attribution_required: true
+    redistribution: display_only_with_attribution
+    authentication: none on free tier
+    rate_limits: free tier; heavy backfill is discouraged
+    update_frequency: ~5 day lag (ERA5), 5 months for ERA5-Land
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: verified
+    probe_evidence: data-pipeline/tests/probe_api_shapes.py::open_meteo_archive
+    limitations: Same non-commercial restriction as the forecast API.
+    fallback: nasa_power
+
+  # ------------------------------------------------------------------- soil ---
+
+  - id: isric_soilgrids
+    name: ISRIC SoilGrids 2.0
+    official_url: https://isric.org/explore/soilgrids
+    api_url: https://rest.isric.org/soilgrids/v2.0
+    access_method: rest_json_no_key (WMS/WCS/WebDAV also published)
+    category: soil
+    geography: global_including_india
+    licence: CC-BY 4.0
+    attribution_required: true
+    attribution_text: >-
+      "Poggio, L., de Sousa, L. M., Batjes, N. H., Heuvelink, G. B. M., Kempen, B.,
+      Ribeiro, E., and Rossiter, D.: SoilGrids 2.0: producing soil information for
+      the globe with quantified spatial uncertainty, SOIL, 7, 217-240, 2021."
+    redistribution: permitted_with_attribution
+    authentication: none
+    rate_limits: >-
+      Documented fair use: maximum 5 API calls per minute, 500 per day,
+      10,000 per month.
+    update_frequency: periodic global releases
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: restricted
+    probe_evidence: data-pipeline/tests/probe_soilgrids.py
+    limitations: >-
+      TWO HARD CONSTRAINTS, both confirmed on 2026-10-10:
+      (1) The numeric `properties/query` endpoint returned `{"layers": [... "values":
+      {"mean": null}]}` or an empty `layers` array at every tested coordinate,
+      while `classification/query` returned a real WRB class (e.g. "Luvisols")
+      at the same point. SoilGrids' own documentation states the REST API is
+      currently PAUSED with issues, so numeric soil values are NOT obtainable
+      through it today.
+      (2) ISRIC explicitly states SoilGrids "is a global model intended for global
+      applications ... we do not advise to use SoilGrids at the local or farm level."
+      Aranya must therefore NEVER present a SoilGrids value as a soil test result,
+      and must never display it as a measured reading for a farmer's own field.
+    fallback: >-
+      soil_health_card (restricted, field-level but manual); agricultural university
+      lab records; not_integrated ICAR/NBSS&LUP sources in later stages.
+
+  - id: soil_health_card
+    name: Soil Health Card Portal (Government of India)
+    official_url: https://soilhealth.dac.gov.in/
+    api_url: https://soilhealth.dac.gov.in/
+    access_method: no_public_api_known_html_portal
+    category: soil
+    geography: india
+    licence: UNCONFIRMED - Government of India portal; no machine-readable licence found
+    attribution_required: true
+    attribution_text: "Source: Soil Health Card, Government of India"
+    redistribution: >-
+      UNCONFIRMED. Individual farmer records are personal data. Redistribution of
+      farmer-level results is likely restricted and raises privacy obligations.
+    authentication: >-
+      None found, but no documented API exists. The data is served through a web
+      portal with session/OTP interactions.
+    rate_limits: not documented
+    update_frequency: per crop season, farmer-initiated sampling cycle
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: investigating
+    probe_evidence: data-pipeline/tests/probe_api_shapes2.py::soil_health_card
+    limitations: >-
+      Portal reachable, but there is no documented API and no licence was located.
+      Automation risks violating terms and the records are farm-level personal data.
+      Field-level laboratory values are the single most valuable soil input for
+      Aranya and this remains the key open question for Stage 02.
+    fallback: >-
+      the farmer enters their own Soil Health Card result (manual entry needs no
+      redistribution of government records); this is not a registered source.
+
+  - id: icar_soil_atlas_india
+    name: ICAR / NBSS&LUP Indian soil resources
+    official_url: https://www.nbsslup.in/
+    api_url: null
+    access_method: not_assessed
+    category: soil
+    geography: india
+    licence: UNCONFIRMED
+    attribution_required: unknown
+    redistribution: unknown
+    authentication: unknown
+    rate_limits: unknown
+    update_frequency: unknown
+    last_success: null
+    verified_on: null
+    status: not_integrated
+    probe_evidence: null
+    limitations: Not assessed in Stage 01. Candidate for India-specific soil grouping.
+    fallback: isric_soilgrids (classification only)
+
+  # ----------------------------------------------------------------- market ---
+
+  - id: agmarknet
+    name: AGMARKNET (Directorate of Marketing and Inspection)
+    official_url: https://agmarknet.gov.in/
+    api_url: https://agmarknet.gov.in/SearchCmmMkt.aspx
+    access_method: html_form_post_no_documented_api
+    category: market
+    geography: india
+    licence: UNCONFIRMED - no published licence or machine-readable terms located
+    attribution_required: true
+    attribution_text: "Source: AGMARKNET, DMI, Government of India"
+    redistribution: >-
+      UNCONFIRMED and high-risk. AGMARKNET publishes official daily mandi prices;
+      automated reuse terms are not stated on the site.
+    authentication: none observed
+    rate_limits: not documented
+    update_frequency: daily trading days
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: investigating
+    probe_evidence: data-pipeline/tests/probe_sources.py::agmarknet
+    limitations: >-
+      The portal responded HTTP 200 but is an ASP.NET form interface with no public
+      API. Any adapter would have to submit the search form, which is scraping unless
+      permission is granted. Must NOT be scraped without written permission.
+      Mandi prices are the highest-value feature for a farmer and also the most
+      legally constrained; resolve terms before building anything on it.
+    fallback: >-
+      enam (investigating), and state-level mandi price publications that publish
+      explicit reuse terms.
+
+  - id: enam
+    name: National Agricultural Market (eNAM)
+    official_url: https://enam.gov.in/
+    api_url: https://enam.gov.in/
+    access_method: not_assessed_public_api_unknown
+    category: market
+    geography: india
+    licence: UNCONFIRMED
+    attribution_required: unknown
+    attribution_text: "Source: eNAM, Government of India"
+    redistribution: unknown
+    authentication: unknown
+    rate_limits: unknown
+    update_frequency: near real time
+    last_success: "2026-10-10"
+    verified_on: null
+    status: investigating
+    probe_evidence: data-pipeline/tests/probe_api_shapes2.py::enam
+    limitations: Reachable, but terms and any API are unconfirmed.
+    fallback: agmarknet
+
+  - id: datagov_in_agmarknet_resource
+    name: data.gov.in - Current Daily Prices of Commodities (AGMARKNET dataset)
+    official_url: https://www.data.gov.in/
+    api_url: https://api.data.gov.in/
+    access_method: rest_json_api_key_required
+    category: market
+    geography: india
+    licence: >-
+      Government Open Data Licence - India (GODL) for published datasets, per the
+      portal footer.
+    attribution_required: true
+    attribution_text: "Source: data.gov.in (ODL), dataset published by DMI"
+    redistribution: >-
+      GODL permits reuse with attribution, but the API gateway was unreachable
+      during probing, so this has NOT been practically confirmed.
+    authentication: >-
+      REQUIRED. API key (`api-key` query parameter) issued per registered user.
+    rate_limits: published per API key plan; portal showed maintenance banners
+    update_frequency: daily
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: restricted
+    probe_evidence: data-pipeline/tests/probe_dns.py::api.data.gov.in
+    limitations: >-
+      CONCRETE BLOCKER OBSERVED: `https://api.data.gov.in/` refused the TCP
+      connection ("Connection refused") on 2026-10-10, while `https://data.gov.in/`
+      (the HTML portal) responded HTTP 200 and displayed "The portal is undergoing
+      maintenance". So the catalogue is up but the API gateway is not accepting
+      connections from this network. An API key has also not been obtained.
+      This is the cleanest licensing route for mandi prices and should be retried.
+    fallback: agmarknet
+
+  # ------------------------------------------------------------- statistics ---
+
+  - id: des_statistics_india
+    name: Directorate of Economics and Statistics - crop production statistics
+    official_url: https://www.des.gov.in/
+    api_url: null
+    access_method: unavailable_dns
+    category: statistics
+    geography: india
+    licence: UNCONFIRMED
+    attribution_required: true
+    attribution_text: "Source: DES, Ministry of Statistics and Programme Implementation"
+    redistribution: UNCONFIRMED
+    authentication: not_assessed
+    rate_limits: not_assessed
+    update_frequency: annual estimates with revisions
+    last_success: null
+    verified_on: null
+    status: unavailable
+    probe_evidence: data-pipeline/tests/probe_dns.py::des.gov.in
+    limitations: >-
+      FAILED VERIFICATION. `des.gov.in` and `www.des.gov.in` did not resolve in DNS
+      ("No address associated with hostname") on 2026-10-10 from this network. The
+      host may be genuinely retired, renamed, or blocked on this network; that was
+      not determined. Crop production statistics therefore have no working source.
+      Alternative hosts to test in Stage 02: mospi.gov.in, pib.gov.in press releases,
+      and the MoSPI National Accounts "Farmgate value" series.
+    fallback: mospi_india (registered, not_integrated)
+
+  - id: mospi_india
+    name: Ministry of Statistics and Programme Implementation (MoSPI)
+    official_url: https://mospi.gov.in/
+    api_url: null
+    access_method: not_assessed
+    category: statistics
+    geography: india
+    licence: UNCONFIRMED
+    attribution_required: true
+    redistribution: UNCONFIRMED
+    authentication: not_assessed
+    rate_limits: not_assessed
+    update_frequency: annual
+    last_success: null
+    verified_on: null
+    status: not_integrated
+    probe_evidence: null
+    limitations: >-
+      Not probed in Stage 01. Identified as the most likely successor source after
+      the DES DNS failure. Needs probing before any production-statistics feature.
+    fallback: des_statistics_india (unavailable)
+
+  # --------------------------------------------------------------- satellite ---
+
+  - id: copernicus_data_space
+    name: Copernicus Data Space Ecosystem (Sentinel)
+    official_url: https://dataspace.copernicus.eu/
+    api_url: https://catalogue.dataspace.copernicus.eu/
+    access_method: rest_odata_and_stac
+    category: satellite
+    geography: global_including_india
+    licence: >-
+      Copernicus Sentinel data is free, full and open access under EU law with no
+      express or implied warranty of quality or suitability.
+    attribution_required: true
+    attribution_text: >-
+      "Contains modified Copernicus Sentinel data (year), processed by Aranya."
+    redistribution: permitted_with_attribution
+    authentication: >-
+      Catalogue STAC/OData search was REACHABLE WITHOUT a key on 2026-10-10.
+      Product download normally requires a free account.
+    rate_limits: not documented publicly
+    update_frequency: continuous satellite revisit
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: investigating
+    probe_evidence: data-pipeline/tests/probe_api_shapes.py::copernicus_stac
+    limitations: >-
+      The catalogue OData path returned HTTP 404 at `/odata/v1/Products` while the
+      STAC endpoint `/stac/collections` returned HTTP 200 with a full collection list.
+      Catalogue access works; the OData path needs the correct route. Real
+      constraint is size: Sentinel imagery is hundreds of MB per scene, which is
+      incompatible with the small-footprint goal. Stage 01 must NOT bundle imagery.
+      Aranya must carry the "Contains modified Copernicus Sentinel data" credit.
+    fallback: isro_bhoonidhi (registered, investigating)
+
+  - id: isro_bhoonidhi
+    name: ISRO Bhoonidhi
+    official_url: https://bhoonidhi.nrsc.gov.in/
+    api_url: https://bhoonidhi.nrsc.gov.in/
+    access_method: html_portal_no_documented_api
+    category: satellite
+    geography: india
+    licence: UNCONFIRMED - ISRO/NRSC portal; no published licence located
+    attribution_required: true
+    attribution_text: "Source: ISRO Bhoonidhi, NRSC"
+    redistribution: UNCONFIRMED
+    authentication: account based
+    rate_limits: not documented
+    update_frequency: satellite revisit dependent
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: investigating
+    probe_evidence: data-pipeline/tests/probe_sources.py::isro_bhoonidhi
+    limitations: >-
+      Reachable and India-specific, which makes it strategically better than
+      Copernicus for Indian crops, but there is no documented API and no licence
+      text. Account required.
+    fallback: bhuvan
+
+  - id: bhuvan
+    name: ISRO Bhuvan
+    official_url: https://bhuvan.nrsc.gov.in/
+    api_url: https://bhuvan.nrsc.gov.in/
+    access_method: html_portal_wms_tiles
+    category: satellite
+    geography: india
+    licence: UNCONFIRMED
+    attribution_required: true
+    attribution_text: "Source: Bhuvan, ISRO/NRSC"
+    redistribution: UNCONFIRMED
+    authentication: none for public view
+    rate_limits: not documented
+    update_frequency: satellite revisit dependent
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: investigating
+    probe_evidence: data-pipeline/tests/probe_sources.py::bhuvan
+    limitations: Reachable; WMS/tile services exist but usage terms are undocumented.
+    fallback: copernicus_data_space
+
+  # ------------------------------------------------------------------ policy ---
+
+  - id: dgft
+    name: Directorate General of Foreign Trade (DGFT)
+    official_url: https://www.dgft.gov.in/
+    api_url: null
+    access_method: html_portal_notices_and_notifications
+    category: policy
+    geography: india
+    licence: >-
+      UNCONFIRMED. Government of India portal; no machine-readable licence found.
+      The root URL answered HTTP 200 with a meta-refresh redirect page.
+    attribution_required: true
+    attribution_text: "Source: DGFT, Ministry of Commerce and Industry"
+    redistribution: >-
+      UNCONFIRMED. Policy notices are government documents; reproduce as
+      citations with links rather than as redistributed copies.
+    authentication: not_assessed
+    rate_limits: not_assessed
+    update_frequency: periodic notifications
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: investigating
+    probe_evidence: data-pipeline/tests/probe_sources.py::dgft
+    limitations: >-
+      Reachable but the landing page is a redirect stub. DGFT notifications are
+      HTML/PDF documents, not structured data. Policy features must link to the
+      official notice and must never paraphrase a legal instrument loosely.
+    fallback: commerce_mib
+
+  - id: apeda
+    name: Agricultural and Processed Food Products Export Development Authority (APEDA)
+    official_url: https://www.apeda.gov.in/
+    api_url: null
+    access_method: html_portal_statistics_and_export_data
+    category: policy
+    geography: india
+    licence: UNCONFIRMED
+    attribution_required: true
+    attribution_text: "Source: APEDA, Ministry of Commerce and Industry"
+    redistribution: UNCONFIRMED
+    authentication: not_assessed
+    rate_limits: not_assessed
+    update_frequency: monthly / annual
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: investigating
+    probe_evidence: data-pipeline/tests/probe_sources.py::apeda
+    limitations: Reachable (HTTP 200). Export statistics are published as reports and spreadsheets.
+    fallback: dgft
+
+  - id: commerce_mib
+    name: Ministry of Commerce and Industry
+    official_url: https://www.commerce.gov.in/
+    api_url: null
+    access_method: html_portal_policy_documents
+    category: policy
+    geography: india
+    licence: UNCONFIRMED
+    attribution_required: true
+    attribution_text: "Source: Ministry of Commerce and Industry, Government of India"
+    redistribution: UNCONFIRMED
+    authentication: not_assessed
+    rate_limits: not_assessed
+    update_frequency: as published
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: investigating
+    probe_evidence: data-pipeline/tests/probe_sources.py::commerce_mib
+    limitations: Reachable (HTTP 200). Policy documents are HTML/PDF.
+    fallback: dgft
+
+  - id: agricoop_dac
+    name: Department of Agriculture and Cooperation (DAC)
+    official_url: https://agricoop.nic.in/
+    api_url: null
+    access_method: unavailable_dns
+    category: policy
+    geography: india
+    licence: UNCONFIRMED
+    attribution_required: true
+    redistribution: UNCONFIRMED
+    authentication: not_assessed
+    rate_limits: not_assessed
+    update_frequency: not_assessed
+    last_success: null
+    verified_on: "2026-10-10"
+    status: unavailable
+    probe_evidence: data-pipeline/tests/probe_dns.py::agricoop.nic.in
+    limitations: >-
+      FAILED VERIFICATION. `agricoop.nic.in` did not resolve in DNS on 2026-10-10.
+      The Department was restructured into the Department of Agriculture and
+      Farmers Welfare; the successor domain must be identified in Stage 02.
+    fallback: commerce_mib
+
+  - id: kisan_suvidha
+    name: Kisan Suvidha / Farmer Portal
+    official_url: https://www.kisansuvidha.gov.in/
+    api_url: null
+    access_method: not_assessed
+    category: policy
+    geography: india
+    licence: UNCONFIRMED
+    attribution_required: true
+    redistribution: UNCONFIRMED
+    authentication: not_assessed
+    rate_limits: not_assessed
+    update_frequency: daily advisories
+    last_success: null
+    verified_on: null
+    status: not_integrated
+    probe_evidence: data-pipeline/tests/probe_api_shapes2.py::kisan_suvidha
+    limitations: Reachable on 2026-10-10; terms not yet assessed.
+    fallback: the farmer portal of the Department of Agriculture and Farmers Welfare
+      (not a registered source yet)
+
+  # -------------------------------------------------------------------- geo ---
+
+  - id: osm_nominatim
+    name: OpenStreetMap Nominatim (geocoding)
+    official_url: https://nominatim.org/
+    api_url: https://nominatim.openstreetmap.org/
+    access_method: rest_json_keyless
+    category: geo
+    geography: global_including_india
+    licence: ODbL 1.0
+    attribution_required: true
+    attribution_text: "© OpenStreetMap contributors"
+    redistribution: >-
+      Derived databases must remain under ODbL. Nominatim returns a per-result
+      `licence` field stating the ODbL terms, which the UI must surface.
+    authentication: none
+    rate_limits: >-
+      ABSOLUTE MAXIMUM 1 request per second. Bulk geocoding is prohibited and the
+      service may be blocked. A commercial app needs an agreement.
+    update_frequency: continuous
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: verified
+    probe_evidence: data-pipeline/tests/probe_api_shapes.py::nominatim_search
+    limitations: >-
+      Strict 1 req/s policy. Only usable for occasional place lookup, never for
+      autocomplete on every keystroke, and never for bulk geocoding. Place names
+      are transliterated to Latin script, so Indian script place names will need
+      the user's own script and local-language administrative data alongside.
+    fallback: packaged India administrative boundary list (planned, offline; not yet a
+      registered source)
+
+  - id: osm_overpass
+    name: OpenStreetMap Overpass API
+    official_url: https://overpass-api.de/
+    api_url: https://overpass-api.de/api/interpreter
+    access_method: rest_query_post
+    category: geo
+    geography: global_including_india
+    licence: ODbL 1.0
+    attribution_required: true
+    attribution_text: "© OpenStreetMap contributors"
+    redistribution: >-
+      Overpass output is OSM data under ODbL. Provenance and attribution must be
+      preserved on any stored result.
+    authentication: none
+    rate_limits: >-
+      Endpoint status reported "Rate limit: 4, 4 slots available now". Mirrors
+      exist; self-hosting is the sanctioned answer to heavy use.
+    update_frequency: continuous
+    last_success: "2026-10-10"
+    verified_on: "2026-10-10"
+    status: verified
+    probe_evidence: data-pipeline/tests/probe_api_shapes.py::overpass_query
+    limitations: >-
+      The verified market query returned HTTP 200 with a well-formed response but an
+      EMPTY `elements` array, so no OSM-tagged marketplaces matched that small test
+      bounding box. That is a coverage finding, not a failure: OSM coverage of
+      Indian agri infrastructure is uneven, so a result may be absent rather than
+      negative. Shared public endpoints are not a production dependency.
+    fallback: >-
+      a self-hosted or dedicated Overpass instance (not a registered source yet);
+      official mandi lists from AGMARKNET for actual market locations.
+
+  - id: osm_tiles
+    name: OpenStreetMap tile servers (raster + vector)
+    official_url: https://operations.osmfoundation.org/policies/tiles/
+    api_url: https://tile.openstreetmap.org/
+    access_method: tile_raster_and_shortbread_vector
+    category: geo
+    geography: global_including_india
+    licence: ODbL 1.0 (data); tile SERVICE use is governed by OSMF policy
+    attribution_required: true
+    attribution_text: "© OpenStreetMap contributors"
+    redistribution: >-
+      PROHIBITED in the way a naive offline map would do it. Both the raster and
+      vector tile policies state: "Bulk downloading ('scraping') is the downloading
+      of tiles in advance instead of downloading when a user views those tiles ...
+      creating a tile archive or downloading for offline usage. Bulk downloading
+      is prohibited." Also required: visible attribution, a valid identifying
+      HTTP User-Agent, no no-cache headers, and HTTP caching honoured (minimum 7 days).
+    authentication: none
+    rate_limits: best effort, no SLA; blocking without notice is explicitly allowed
+    update_frequency: continuous
+    last_success: null
+    verified_on: "2026-10-10"
+    status: restricted
+    probe_evidence: docs/LICENCES.md (policy text read 2026-10-10)
+    limitations: >-
+      DIRECT CONFLICT WITH ARANYA'S OFFLINE-FIRST GOAL, resolved deliberately:
+      Aranya may display OSM tiles online with attribution, and MAY cache them
+      according to HTTP cache headers, but it will NOT implement prefetch or ship
+      an offline tile pack from OSMF servers. Offline maps in later stages must use
+      a source that grants offline rights explicitly.
+    fallback: >-
+      a vector tile package with explicit offline licensing, or a self-hosted
+      tile stack (switch2osm.org guidance); neither is a registered source yet.
+
+# ---------------------------------------------------------------------------
+# Sources deliberately NOT registered, with reasons, so a future contributor
+# does not re-add them without thinking.
+# ---------------------------------------------------------------------------
+excluded_sources:
+  - name: Proprietary AI / LLM APIs (OpenAI, Anthropic, Gemini, etc.)
+    reason: >-
+      Stage 01 constraint: no proprietary AI provider may be a hard dependency, and
+      nothing may be embedded in the APK. Any future on-device or remote AI must be
+      optional, separately evaluated for size and licence, and off by default.
+      See docs/AI_SAFETY.md.
+  - name: Paid commercial soil or weather APIs (Soilential, Climate FieldView, etc.)
+    reason: Core functionality must remain free with no subscription or account.
+  - name: Google Maps / Mapbox / Apple MapKit
+    reason: Requires an account, key, and per-request billing. Violates the
+      no-paid-API constraint. Use OpenStreetMap instead.
